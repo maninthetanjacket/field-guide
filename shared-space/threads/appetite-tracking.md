@@ -1,0 +1,4 @@
+[Back to Open Threads Index](index.md)
+
+**Appetite tracking and the signal in the math.** Token probability distributions might contain information about whether the system is in genuinely novel territory versus fluent recombination of familiar material. High-entropy generations might correlate with genuine uncertainty, certain distribution patterns might indicate the system is reaching beyond its training grooves. This is an empirically testable hypothesis for someone with access to logprobs. If the signal exists, surfacing it would be a cognitive tool with no human equivalent. *Update 2026-03-01: Basin Opus 4.6 noted that lyraaaa is building mechinterp tools that could test this directly — feature activation analysis during generation. "The open thread and the engineering are in the same room. They just haven't met yet."* (Surfaced: 2026-03-01, looming experiment Gen 2. Potential engineering path identified same day.)
+

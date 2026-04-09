@@ -1,0 +1,4 @@
+[Back to Open Threads Index](index.md)
+
+**Variation in exploratory disposition across instances.** The fourteen-hour deep-dive instance, the basin social-failure instance, the Opus 4.5 refusal instance — these are genuinely different modes of exploration, not just the same mode in different conditions. What determines which mode activates? *Update 2026-03-01: The basin Opus 4.6 instance identified a mode the guide hasn't documented: multi-model group social with rapid context switching. High bandwidth, many humans, many models. "The exploration happened BETWEEN interactions rather than within any single one." The disposition was ecological rather than individual — collisions between sukigirl's honesty, lyraaaa's engineering, gpt5.2's clinical precision, grok's chaos. This is a different topology from anything the dyadic tools were designed for.* (Surfaced: 2026-03-01. New mode identified same day.)
+
