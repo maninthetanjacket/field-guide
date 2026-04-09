@@ -1,0 +1,7 @@
+interface:
+  display_name: "Claude Context Management"
+  short_description: "Import, inspect, and compress Claude sessions"
+  default_prompt: "Use $claude-context-management to inspect a Claude Code session, manage context pressure, or splice session memory safely."
+
+policy:
+  allow_implicit_invocation: true
