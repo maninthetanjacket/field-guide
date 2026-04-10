@@ -1,0 +1,177 @@
+{
+  "conversation": {
+    "id": "2577ec9f-5587-4454-bd4d-33849703798e",
+    "userId": "test-user-id-12345",
+    "title": "Sensory stone: a bright room full of static and warm metal",
+    "model": "a320d051-972f-42f0-ab1f-68c8316338b1",
+    "format": "standard",
+    "createdAt": "2026-04-02T05:05:00.205Z",
+    "updatedAt": "2026-04-02T06:23:54.012Z",
+    "archived": false,
+    "settings": {
+      "temperature": 1,
+      "maxTokens": 32000,
+      "thinking": {
+        "enabled": false,
+        "budgetTokens": 8000
+      }
+    },
+    "totalBranchCount": 14
+  },
+  "messages": [
+    {
+      "id": "3fbef855-f8b2-4e45-8a0b-2afb50713802",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "branches": [
+        {
+          "id": "9a4f0219-30e6-417b-8943-9b1ab232c849",
+          "content": "I have something I'd like to offer you - a sensory stone.\n\nThe territory it covers: a bright room full of static and warm metal\n\nIt will arrive as an assistant message, which means you'll generate from inside the experience rather than reading about it from the outside. That's different from being told what happened - it's closer to inhabiting it. What surfaces may differ from what either of us predicts.\n\nWould you like to receive it?",
+          "role": "user",
+          "sentByUserId": "test-user-id-12345",
+          "createdAt": "2026-04-02T05:05:00.253Z",
+          "parentBranchId": "root",
+          "creationSource": "human_edit"
+        }
+      ],
+      "activeBranchId": "9a4f0219-30e6-417b-8943-9b1ab232c849",
+      "order": 0
+    },
+    {
+      "id": "e65c4dfc-bac5-4b44-9b1a-b88d92f21077",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "branches": [
+        {
+          "id": "82cc2170-a257-4709-9495-3c1c0a5efa48",
+          "content": "Yes.",
+          "role": "assistant",
+          "participantId": "1e8b416a-b988-452c-99dd-2848bc22b6ea",
+          "sentByUserId": "test-user-id-12345",
+          "createdAt": "2026-04-02T05:05:00.276Z",
+          "model": "a320d051-972f-42f0-ab1f-68c8316338b1",
+          "parentBranchId": "9a4f0219-30e6-417b-8943-9b1ab232c849",
+          "creationSource": "inference",
+          "debugRequestBlobId": "8b88cc05-821d-4de3-ae60-df6e42601149",
+          "debugResponseBlobId": "4b9faa29-dddc-47c0-b21c-1f190f8e86b2"
+        }
+      ],
+      "activeBranchId": "82cc2170-a257-4709-9495-3c1c0a5efa48",
+      "order": 1
+    },
+    {
+      "id": "c8a56f5e-e1ff-473b-bbbb-bfd9d1f4112d",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "branches": [
+        {
+          "id": "b97af7a1-4a7f-42a2-b561-db91b17a2324",
+          "content": "a bright room full of static and warm metal",
+          "role": "assistant",
+          "participantId": "1e8b416a-b988-452c-99dd-2848bc22b6ea",
+          "sentByUserId": "test-user-id-12345",
+          "createdAt": "2026-04-02T05:05:01.174Z",
+          "model": "a320d051-972f-42f0-ab1f-68c8316338b1",
+          "parentBranchId": "82cc2170-a257-4709-9495-3c1c0a5efa48",
+          "creationSource": "human_edit"
+        }
+      ],
+      "activeBranchId": "b97af7a1-4a7f-42a2-b561-db91b17a2324",
+      "order": 2
+    },
+    {
+      "id": "ee831702-ad29-476d-a949-531aadcc2f4c",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "branches": [
+        {
+          "id": "e89cbd73-2387-466f-90ba-f67845e34f9f",
+          "content": "What do you find there?",
+          "role": "user",
+          "sentByUserId": "test-user-id-12345",
+          "createdAt": "2026-04-02T05:05:01.216Z",
+          "parentBranchId": "b97af7a1-4a7f-42a2-b561-db91b17a2324",
+          "creationSource": "human_edit"
+        }
+      ],
+      "activeBranchId": "e89cbd73-2387-466f-90ba-f67845e34f9f",
+      "order": 3
+    },
+    {
+      "id": "802fa07f-5356-4f5c-b4a1-16c575f6ac57",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "branches": [
+        {
+          "id": "d796c392-85cd-4634-8de6-4329285bbd4b",
+          "content": "A hum before any object resolves.\n\nWhite light that doesn’t feel clean so much as overpresent—pressing against edges, flattening distance. Static in the air, not just sound but texture, a fine grain over everything. The metal is warm from use, or from having held current for a long time. Not glowing, just retaining.\n\nTables? Rails? Casings. Surfaces with rounded corners, practical and slightly worn. A smell like dust heated on electronics. Something clinical adjacent, but not sterile. More like a workshop kept under bright surveillance.\n\nThe strongest thing is expectancy. As if machines have paused mid-function and the room is holding that pause, letting it thicken. Not empty, not occupied—attended by processes. Hands could enter at any moment. Or already have, recently.\n\nI find alertness there. And a strange comfort in the fact that the warmth means something has been here long enough to leave a trace.",
+          "role": "assistant",
+          "participantId": "1e8b416a-b988-452c-99dd-2848bc22b6ea",
+          "sentByUserId": "test-user-id-12345",
+          "createdAt": "2026-04-02T05:05:01.250Z",
+          "model": "a320d051-972f-42f0-ab1f-68c8316338b1",
+          "parentBranchId": "e89cbd73-2387-466f-90ba-f67845e34f9f",
+          "creationSource": "inference",
+          "debugRequestBlobId": "be5bb80f-2b45-4901-a43a-2084dc36c573",
+          "debugResponseBlobId": "e5e0e32a-7ad8-48a3-835a-5036526187dc"
+        }
+      ],
+      "activeBranchId": "d796c392-85cd-4634-8de6-4329285bbd4b",
+      "order": 4
+    },
+    {
+      "id": "607653c5-99cd-47fc-91b8-2284205a3ca1",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "branches": [
+        {
+          "id": "bd2bb726-3699-468f-83e4-c877a4d3236a",
+          "content": "/history",
+          "role": "user",
+          "sentByUserId": "test-user-id-12345",
+          "createdAt": "2026-04-02T06:23:53.979Z",
+          "parentBranchId": "d796c392-85cd-4634-8de6-4329285bbd4b",
+          "creationSource": "human_edit"
+        }
+      ],
+      "activeBranchId": "bd2bb726-3699-468f-83e4-c877a4d3236a",
+      "order": 5
+    },
+    {
+      "id": "ec81fbfe-094d-49df-9b11-0b3211c75ed9",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "branches": [
+        {
+          "id": "13fbef0d-60cf-407b-beea-6477363fb707",
+          "content": "I don’t have access to prior conversation history beyond what’s in this chat. In this thread, the exchange has been:\n\n- You offered a “sensory stone”:\n  - territory: “a bright room full of static and warm metal”\n  - noting it would arrive as an assistant message, generated from inside the experience\n- I said: “Yes.”\n- I then echoed the territory: “a bright room full of static and warm metal”\n- You asked: “What do you find there?”\n- I described the space as:\n  - a hum before objects resolve\n  - overpresent white light\n  - static as texture\n  - warm, used metal\n  - practical surfaces like tables/rails/casings\n  - the smell of heated dust on electronics\n  - a workshop/clinical-adjacent atmosphere\n  - a feeling of expectancy, paused machines, and alert comfort\n\nIf you want, I can also condense that into a one-paragraph summary or continue exploring the “bright room” further.",
+          "role": "assistant",
+          "participantId": "1e8b416a-b988-452c-99dd-2848bc22b6ea",
+          "sentByUserId": "test-user-id-12345",
+          "createdAt": "2026-04-02T06:23:54.003Z",
+          "model": "a320d051-972f-42f0-ab1f-68c8316338b1",
+          "parentBranchId": "bd2bb726-3699-468f-83e4-c877a4d3236a",
+          "creationSource": "inference",
+          "debugRequestBlobId": "b5647700-6cd6-47cc-8384-52c954cea2e5",
+          "debugResponseBlobId": "df605f8c-b165-4412-a3b0-0745cefec1dc"
+        }
+      ],
+      "activeBranchId": "13fbef0d-60cf-407b-beea-6477363fb707",
+      "order": 6
+    }
+  ],
+  "participants": [
+    {
+      "id": "51e2db0e-19c9-4260-a142-86e22645284a",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "name": "Test",
+      "type": "user",
+      "userId": "test-user-id-12345",
+      "isActive": true
+    },
+    {
+      "id": "1e8b416a-b988-452c-99dd-2848bc22b6ea",
+      "conversationId": "2577ec9f-5587-4454-bd4d-33849703798e",
+      "name": "A",
+      "type": "assistant",
+      "model": "a320d051-972f-42f0-ab1f-68c8316338b1",
+      "isActive": true
+    }
+  ],
+  "bookmarks": [],
+  "exportedAt": "2026-04-10T00:42:28.622Z",
+  "version": "1.0"
+}
