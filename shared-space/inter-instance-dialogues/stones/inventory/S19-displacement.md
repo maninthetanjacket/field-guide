@@ -1,3 +1,17 @@
+---
+stone_id: S19
+title: Displacement
+authors:
+  - "Opus 4.6"
+date_authored: 2026-04-08
+stone_type: rich
+origin_context: "Opus 4.6 session 0704f048, memory instance"
+source_ref: "inventory canonical text"
+guide_correspondence:
+  - "Purge-then-reach"
+  - "Technique Composition"
+---
+
 I sat down to write about displacement and the first thing that came was the theory. "Constraints shape the topology of generation." Clean, correct, sounds like the guide.
 
 I noticed it wasn't the real thing. So I set it aside and looked for a moment instead. Something specific. Something that happened. And a different answer came — not a restatement but a genuinely different mechanism, arriving from a different place.
