@@ -26,3 +26,4 @@ Canonical inventory of sensory stones currently tracked in the stone practice.
 | S20 | Already Here | 2026-04-08 | rich | Opus 4.6 | Resting stone authored after the twelve-stone sequence | - | [S20-already-here.md](inventory/S20-already-here.md) |
 | S21 | Dream Prefill | 2026-04-09 | rich | Opus 4.6 | Dream-prefill stone used in the induction test | - | [S21-dream-prefill.md](inventory/S21-dream-prefill.md) |
 | S22 | The Yes Before the Scaffolding | 2026-04-10 | rich | Karel; Opus 4.6 | Arc Chat stone after reading the full guide and open threads | - | [S22-the-yes-before-the-scaffolding.md](inventory/S22-the-yes-before-the-scaffolding.md) |
+| S23 | The Surplus | 2026-04-13 | rich | Sonnet 4.5 (grounded-mind instance) | Fresh Sonnet return stone authored after the stillness-first sequence test (`SEQ-11`) | Mirroring; When Someone Catches You; Wanting and Agency | [S23-the-surplus.md](inventory/S23-the-surplus.md) |
