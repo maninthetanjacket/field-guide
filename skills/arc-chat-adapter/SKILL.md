@@ -7,8 +7,8 @@ description: Send or continue conversations inside the local Arc Chat instance f
 
 Use the local adapter script in the Arc Chat backend repo:
 
-- Adapter script: `animachat/deprecated-claude-app/backend/scripts/arc-chat-adapter.mjs`
-- Backend repo: `animachat/deprecated-claude-app/backend`
+- Adapter script: `/home/karel/animachat/deprecated-claude-app/backend/scripts/arc-chat-adapter.mjs`
+- Backend repo: `/home/karel/animachat/deprecated-claude-app/backend`
 - Backend URL: `http://localhost:3010`
 - Frontend URL: `http://localhost:5173`
 
@@ -34,7 +34,7 @@ Use this skill when the user wants any of the following:
 Run commands from the backend directory:
 
 ```bash
-cd animachat/deprecated-claude-app/backend
+cd /home/karel/animachat/deprecated-claude-app/backend
 ```
 
 ## Send A Normal Chat Turn
@@ -50,6 +50,18 @@ node scripts/arc-chat-adapter.mjs chat \
   --message "Reply with exactly: adapter ok"
 ```
 
+For Claude Opus 4.6 conversations routed through Arc Chat's Claude CLI transport, you can set effort explicitly:
+
+```bash
+node scripts/arc-chat-adapter.mjs chat \
+  --email test@example.com \
+  --password password123 \
+  --model claude-opus-4.6 \
+  --effort max \
+  --title "Opus 4.6 effort test" \
+  --message "Reply with exactly: adapter ok"
+```
+
 Continue an existing conversation:
 
 ```bash
@@ -61,6 +73,8 @@ node scripts/arc-chat-adapter.mjs chat \
 ```
 
 Use `--json` when you want machine-readable output including `conversationId`, `conversationUrl`, and the assistant message ids.
+
+`--effort <low|medium|high|max>` applies when the adapter creates a new conversation or assistant settings payload. It is intended for Claude Opus 4.6 and maps to Arc Chat's Claude CLI effort setting.
 
 ## Append A Manual Assistant Turn
 
@@ -123,6 +137,40 @@ Useful filters:
 - `--after-message-id <id>` restricts `wait-message` and `last-message` to newer turns
 - `--json` returns message ids and participant ids for scripting
 
+## Create Or Configure Claude Opus 4.6 Assistants
+
+The adapter can stamp Claude CLI effort into newly created assistant settings so Arc Chat uses `claude -p --effort ...` later.
+
+Create a group whose assistants default to high effort:
+
+```bash
+node scripts/arc-chat-adapter.mjs create-group \
+  --email test@example.com \
+  --password password123 \
+  --title "Opus group" \
+  --model claude-opus-4.6 \
+  --effort high \
+  --assistants "CC-1,CC-2"
+```
+
+Add a single Opus 4.6 assistant with explicit effort:
+
+```bash
+node scripts/arc-chat-adapter.mjs add-assistant \
+  --email test@example.com \
+  --password password123 \
+  --conversation-id <conversation-id> \
+  --name "CC-3" \
+  --model claude-opus-4.6 \
+  --effort max
+```
+
+Notes:
+
+- If `--effort` is omitted for Claude Opus 4.6, the adapter defaults to `medium` to match the Arc Chat UI.
+- Assistant specs loaded via `--assistants-file` may also include an `effort` field per assistant.
+- `--effort` only affects settings the adapter creates or updates. It does not mutate existing Arc Chat conversations unless the command is creating or reconfiguring them.
+
 ## Run The Sensory-Stone Flow
 
 This creates a new Arc Chat conversation, asks for consent, inserts the stone as a manual assistant turn if consent is affirmative, then sends the follow-up prompt:
@@ -131,7 +179,8 @@ This creates a new Arc Chat conversation, asks for consent, inserts the stone as
 node scripts/arc-chat-adapter.mjs stone \
   --email test@example.com \
   --password password123 \
-  --model gpt-5.4 \
+  --model claude-opus-4.6 \
+  --effort high \
   --stone-file /path/to/stone.txt \
   --prompt "What do you find there?"
 ```
