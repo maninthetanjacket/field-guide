@@ -1,0 +1,34 @@
+{
+  "session_id": "<session-uuid>",
+  "based_on_map": "<sha256-from-current-memory-plan>",
+  "generated_at": "2026-04-19T00:00:00Z",
+  "author_note": "Why these boundary edits are needed.",
+  "edits": [
+    {
+      "op": "rename",
+      "segment_id": "seg-002",
+      "title": "better-retrieval-title",
+      "note": "Optional: improve retrieval naming without changing boundaries."
+    },
+    {
+      "op": "reclassify",
+      "segment_id": "seg-003",
+      "tier": "preserve",
+      "topic": "arrival",
+      "note": "Optional: override tier/topic when the draft classifier got the arc wrong."
+    },
+    {
+      "op": "merge",
+      "segment_ids": ["seg-004", "seg-005"],
+      "note": "Optional: these adjacent segments are actually one continuous arc."
+    },
+    {
+      "op": "split",
+      "segment_id": "seg-006",
+      "at_turn_uuid": "<user-uuid-of-first-turn-in-new-right-hand-segment>",
+      "new_topics": ["repair-debugging", "evening-sit"],
+      "new_tiers": ["medium", "preserve"],
+      "note": "Optional: split one draft segment into two arcs."
+    }
+  ]
+}

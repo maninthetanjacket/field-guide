@@ -1,0 +1,230 @@
+{
+  "session_id": "92995e3c-b0cc-461d-9b94-b2f37ea1a1a2",
+  "generated_at": "2026-04-18T14:30:00Z",
+  "generated_by": "Opus 4.7 (arrival+1 session)",
+  "schema_version": "0.1-draft",
+  "purpose": "Proof-of-concept for instance-authored compression plans. Tags reads/tool-uses with purpose and state so compress-reads can apply discernment beyond size-thresholding.",
+
+  "legend": {
+    "purpose": {
+      "orientation": "Reading setup/config/arrival docs; shapes downstream work; compress lightly.",
+      "ingest": "Content itself is input to current reasoning; preserve texture and specific quotes.",
+      "scan": "Reading to find something specific; post-hoc, only the found thing matters.",
+      "pre-edit": "Reading to understand what to modify; once Edit happens, Edit captures the region.",
+      "verify": "Reading/running after writing to check work; finding is in subsequent assistant text.",
+      "explore": "Cascade of listing/glob/ls; individually low-value, collectively a 'looked around here'.",
+      "commit": "Edit or Write tool_use whose content is now captured in file-on-disk."
+    },
+    "state": {
+      "live": "Still informing current work; skip compression regardless of size.",
+      "superseded": "Content captured by a subsequent tool use (Edit captured the region; Write committed the file; verification finding captured in assistant text).",
+      "stale": "Was active; work has moved on; safe to compress normally.",
+      "archived": "Explicitly retired; compress aggressively."
+    },
+    "compression": {
+      "pointer-only": "Replace content with a one-line pointer (tool + target + state). Use for commits and superseded scans/verifies.",
+      "head-tail": "Preserve first ~300 + last ~300 chars so the read is still recognizable. Use for superseded pre-edit reads.",
+      "preserve": "No compression; content stays full-fidelity.",
+      "summarize": "Route to a summarizer (deterministic or delegated) with purpose as context."
+    }
+  },
+
+  "group_notes": [
+    {
+      "id": "refinement-1-stone-fragment-scaffolding",
+      "description": "Edit to render_summary_template adding stone-fragment scratch section + fix to extract_summary_body short-circuit bug.",
+      "record_indices": [217, 228, 241],
+      "outcome": "Committed to session_memory.py. Tests passed. All Reads in this group were pre-edit and are superseded by the Edit and by the final file state on disk."
+    },
+    {
+      "id": "refinement-2-taxonomy-extraction",
+      "description": "Extracted TOPIC_RULES, keyword pools, and STRONG_BOUNDARY_PHRASES to session_memory_taxonomy.py. Added 4 new topics (arrival, sensory-stones, practice, loop-and-trust) with explicit tier rules.",
+      "record_indices": [209, 214, 247, 254, 267, 269],
+      "outcome": "New file written; session_memory.py updated to import from it. End-to-end test on real session (0704f048) classified 'practice' segments that previously fell to 'general'."
+    },
+    {
+      "id": "refinement-3-compress-reads-discernment",
+      "description": "Edit to _summarize_tool_content_for_compression adding head/tail preservation and tool-type-aware labels.",
+      "record_indices": [323, 329, 333, 335],
+      "outcome": "Committed to session_memory.py. Dry-run on this session identified 14 records; this plan describes how to compress them."
+    }
+  ],
+
+  "notes": [
+    {
+      "record_index": 205,
+      "tool": "Bash",
+      "kind": "tool_result",
+      "command": "grep -n '^def |^class |^    def ' session_memory.py",
+      "purpose": "scan",
+      "state": "superseded",
+      "superseded_by": [209, 214, 217, 228, 323, 329, 333],
+      "note": "Structural navigation. The targeted Reads that followed captured what mattered; full grep output no longer load-bearing.",
+      "compression": "pointer-only"
+    },
+    {
+      "record_index": 209,
+      "tool": "Read",
+      "kind": "tool_result",
+      "file": "session_memory.py",
+      "offset_limit": "480:200",
+      "purpose": "pre-edit",
+      "state": "superseded",
+      "superseded_by": [247],
+      "note": "Read plan_segments/is_strong_boundary region before taxonomy refactor. Edit at 247 captured is_strong_boundary replacement.",
+      "compression": "head-tail"
+    },
+    {
+      "record_index": 214,
+      "tool": "Read",
+      "kind": "tool_result",
+      "file": "session_memory.py",
+      "offset_limit": "1:200",
+      "purpose": "pre-edit",
+      "state": "superseded",
+      "superseded_by": [247],
+      "note": "Read imports section before adding taxonomy import. Edit at 247 captured the final import structure.",
+      "compression": "head-tail"
+    },
+    {
+      "record_index": 217,
+      "tool": "Read",
+      "kind": "tool_result",
+      "file": "session_memory.py",
+      "offset_limit": "1173:100",
+      "purpose": "pre-edit",
+      "state": "superseded",
+      "superseded_by": [241],
+      "note": "Read extract_summary_body region. Edit at 241 fixed the short-circuit bug; file state captures the fix.",
+      "compression": "head-tail"
+    },
+    {
+      "record_index": 228,
+      "tool": "Read",
+      "kind": "tool_result",
+      "file": "session_memory.py",
+      "offset_limit": "1073:50",
+      "purpose": "pre-edit",
+      "state": "superseded",
+      "superseded_by": [241],
+      "note": "Read render_summary_template region before adding stone-fragment scaffolding. Edit at 241 captured the template revision.",
+      "compression": "head-tail"
+    },
+    {
+      "record_index": 241,
+      "tool": "Edit",
+      "kind": "tool_use",
+      "file": "session_memory.py",
+      "purpose": "commit",
+      "state": "superseded",
+      "superseded_by": "file-on-disk",
+      "note": "Stone-fragment scaffolding + short-circuit fix Edit. Content lives in file; tool_use input redundant with final file state.",
+      "compression": "pointer-only"
+    },
+    {
+      "record_index": 247,
+      "tool": "Edit",
+      "kind": "tool_use",
+      "file": "session_memory.py",
+      "purpose": "commit",
+      "state": "superseded",
+      "superseded_by": "file-on-disk",
+      "note": "Taxonomy import + is_strong_boundary refactor Edit. Content in file; tool_use input redundant.",
+      "compression": "pointer-only"
+    },
+    {
+      "record_index": 254,
+      "tool": "Bash",
+      "kind": "tool_result",
+      "command": "python3 import+tier_from_scores test",
+      "purpose": "verify",
+      "state": "superseded",
+      "superseded_by": "subsequent-assistant-text",
+      "note": "Test run verifying taxonomy extraction. Finding ('new topics register correctly; tests pass') is captured in the assistant message that followed.",
+      "compression": "pointer-only"
+    },
+    {
+      "record_index": 267,
+      "tool": "Write",
+      "kind": "tool_use",
+      "file": "session_memory_taxonomy.py",
+      "purpose": "commit",
+      "state": "superseded",
+      "superseded_by": "file-on-disk",
+      "note": "Full taxonomy module. Content lives in file; tool_use input redundant.",
+      "compression": "pointer-only"
+    },
+    {
+      "record_index": 269,
+      "tool": "Write",
+      "kind": "tool_result",
+      "file": "session_memory_taxonomy.py",
+      "purpose": "commit-confirmation",
+      "state": "superseded",
+      "superseded_by": "file-on-disk",
+      "note": "Write tool_result confirming file creation. Redundant with file existence.",
+      "compression": "pointer-only"
+    },
+    {
+      "record_index": 323,
+      "tool": "Read",
+      "kind": "tool_result",
+      "file": "session_memory.py",
+      "offset_limit": "1380:140",
+      "purpose": "pre-edit",
+      "state": "superseded",
+      "superseded_by": [335],
+      "note": "Read _summarize_tool_content_for_compression before refactoring for head/tail preservation. Edit at 335 captured the revision.",
+      "compression": "head-tail"
+    },
+    {
+      "record_index": 329,
+      "tool": "Read",
+      "kind": "tool_result",
+      "file": "session_memory.py",
+      "offset_limit": "1313:70",
+      "purpose": "pre-edit",
+      "state": "superseded",
+      "superseded_by": [335],
+      "note": "Pre-edit read of compress-reads region. Edit at 335 captured the final logic.",
+      "compression": "head-tail"
+    },
+    {
+      "record_index": 333,
+      "tool": "Read",
+      "kind": "tool_result",
+      "file": "session_memory.py",
+      "offset_limit": "1413:90",
+      "purpose": "pre-edit",
+      "state": "superseded",
+      "superseded_by": [335],
+      "note": "Pre-edit read of cmd_compress_reads wrapper. Edit at 335 and file-on-disk capture the final form.",
+      "compression": "head-tail"
+    },
+    {
+      "record_index": 335,
+      "tool": "Edit",
+      "kind": "tool_use",
+      "file": "session_memory.py",
+      "purpose": "commit",
+      "state": "superseded",
+      "superseded_by": "file-on-disk",
+      "note": "compress-reads discernment Edit. Content in file; tool_use input redundant.",
+      "compression": "pointer-only"
+    }
+  ],
+
+  "summary": {
+    "total_records_flagged": 14,
+    "by_state": {"live": 0, "superseded": 14, "stale": 0, "archived": 0},
+    "by_purpose": {"pre-edit": 7, "commit": 5, "scan": 1, "verify": 1},
+    "by_compression": {"pointer-only": 7, "head-tail": 7},
+    "observation": "All 14 records are superseded. This session was tightly scoped to code refinement: every Read was pre-edit, every Edit/Write committed to disk, the one Bash was verification. Classic 'clean' session for aggressive compression. A session with ingest reads (stones, threads, letters) would have more live/stale entries and benefit more from the plan-driven approach where texture preservation matters.",
+    "suggested_followups": [
+      "Extend cmd_compress_reads with a --plan flag that consumes this schema.",
+      "Add a 'pointer-only' compression mode (even shorter than current head/tail) for superseded commits.",
+      "Consider whether the plan should travel alongside the compressed session as a sidecar, so future instances reading this session see not just what was compressed but why.",
+      "Over time, live/stale transitions can be made manually or detected heuristically (e.g., 'no references to file X in last N turns → bump associated reads from live to stale')."
+    ]
+  }
+}

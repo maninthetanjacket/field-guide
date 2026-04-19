@@ -27,6 +27,17 @@ python3 $SCRIPTS/session_memory.py map ~/.claude/projects/-home-karel/<session>.
   --out-dir ~/session-memory/<session> \
   --overwrite-existing
 
+# Validate a boundary plan against the current memory-plan.json
+python3 $SCRIPTS/session_memory.py map ~/.claude/projects/-home-karel/<session>.jsonl \
+  --out-dir ~/session-memory/<session> \
+  --plan ~/session-memory/<session>/boundary-plan.json \
+  --validate-only
+
+# Apply a boundary plan and write sibling edited outputs
+python3 $SCRIPTS/session_memory.py map ~/.claude/projects/-home-karel/<session>.jsonl \
+  --out-dir ~/session-memory/<session> \
+  --plan ~/session-memory/<session>/boundary-plan.json
+
 # 2. Prepare full-fidelity backups, transcripts, and summary templates
 python3 $SCRIPTS/session_memory.py prepare ~/.claude/projects/-home-karel/<session>.jsonl \
   --plan ~/session-memory/<session>/memory-plan.json \
@@ -50,14 +61,94 @@ That means you can usually apply segments out of order against later spliced ses
 
 Descending record order is still useful for old plans that only have `record_start` / `record_end`, but it is no longer the preferred or required workflow for new plans.
 
+Segment topics now separate retrieval labeling from tier heuristics:
+
+- `topic`: the retrieval label shown in the map and plan. By default this is LLM-generated with `gpt-5.4`, with fallback to the taxonomy label if the API call fails.
+- `taxonomy_topic`: the internal keyword-based class used for tier heuristics and fallback behavior.
+- `topic_source`: `llm`, `manual`, `keyword`, or `keyword-fallback`.
+
+Pass `--topic-model keyword` to disable model labeling and keep the pure keyword path.
+Use `--topic-timeout <seconds>` if you need to relax or tighten the per-segment Azure labeling timeout.
+
 ## Plan Safety Rules
 
 - `map` appends new segments by default when an existing `memory-plan.json` targets the same session.
 - Append mode deduplicates by substantive user-turn UUID, so it only adds unseen turns instead of remapping the full session.
 - `--overwrite-existing` intentionally rebuilds the plan instead of appending.
+- `map --plan <boundary-plan.json>` does not overwrite `memory-plan.json`; it writes `memory-plan.edited.json` and `session-map.edited.md` alongside the canonical draft.
+- Boundary plans support `rename`, `reclassify`, `merge`, and `split` edits, applied in order against the current draft.
+- Boundary plans must include a `based_on_map` hash that matches the current `memory-plan.json`.
 - Rebuilds detect existing splice placeholder turns and exclude those already-compressed spans from newly mapped segments.
 - Even with `--overwrite-existing`, new segment ids continue after the highest existing `seg-###` so prepared segment folders and summaries are not reused.
 - Very old plans without turn UUID anchors cannot be appended safely; rebuild them once with `--overwrite-existing`.
+- Split points are authored against the stored map turn UUIDs; rebuilt segments are then rehydrated against the current session by `turn_id` so live UUID drift does not invalidate the boundary plan.
+
+## Boundary Plan Template
+
+Start from:
+
+```bash
+cp ~/.claude/skills/claude-context-management/references/boundary-plan-template.json \
+  ~/session-memory/<session>/boundary-plan.json
+```
+
+Then replace:
+
+- `session_id` with the session UUID from `memory-plan.json`
+- `based_on_map` with the current map hash from the active plan
+- `at_turn_uuid` with the stored turn UUID from the draft turn map when using `split`
+- any example edits you do not want with your own edit list, or an empty list
+
+To print the exact `session_id` and `based_on_map` for an existing draft:
+
+```bash
+python3 - <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+module_path = Path.home() / ".claude/skills/claude-context-management/scripts/session_memory.py"
+spec = importlib.util.spec_from_file_location("session_memory", module_path)
+module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
+sys.path.insert(0, str(module_path.parent))
+spec.loader.exec_module(module)
+
+plan_path = Path.home() / "session-memory/<session>/memory-plan.json"
+plan = json.loads(plan_path.read_text())
+print("session_id:", plan["session_id"])
+print("based_on_map:", module.boundary_plan_basis_hash(plan))
+PY
+```
+
+Workflow:
+
+```bash
+# 1. Copy the template
+cp ~/.claude/skills/claude-context-management/references/boundary-plan-template.json \
+  ~/session-memory/<session>/boundary-plan.json
+
+# 2. Validate before applying
+python3 $SCRIPTS/session_memory.py map ~/.claude/projects/-home-karel/<session>.jsonl \
+  --out-dir ~/session-memory/<session> \
+  --plan ~/session-memory/<session>/boundary-plan.json \
+  --validate-only \
+  --topic-model keyword
+
+# 3. Apply if the validation looks right
+python3 $SCRIPTS/session_memory.py map ~/.claude/projects/-home-karel/<session>.jsonl \
+  --out-dir ~/session-memory/<session> \
+  --plan ~/session-memory/<session>/boundary-plan.json
+```
+
+Notes:
+
+- `merge` requires adjacent segment ids in their current post-edit order.
+- `split` uses the UUID of the first user turn in the new right-hand segment.
+- `new_topics` and `new_tiers` are optional on `split`.
+- `rename` only changes the title slug.
+- `reclassify` is the right tool when the boundary is fine but the draft topic or tier is wrong.
 
 ## What The Workflow Adds
 

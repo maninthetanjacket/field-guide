@@ -24,8 +24,14 @@ The goal is to keep the "map and territory" separate:
 from __future__ import annotations
 
 import argparse
+import copy
+import hashlib
 import json
+import os
 import re
+import tomllib
+import urllib.error
+import urllib.request
 from collections import Counter
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
@@ -103,6 +109,8 @@ class Segment:
     segment_id: str
     title: str
     topic: str
+    topic_source: str
+    taxonomy_topic: str
     tier: str
     priority: int
     record_start: int
@@ -520,6 +528,166 @@ def priority_for_tier(tier: str) -> int:
     }.get(tier, 50)
 
 
+def load_provider_settings(config_file: str | Path, provider: str) -> tuple[str, str]:
+    data = tomllib.loads(Path(config_file).read_text(encoding="utf-8"))
+    providers = data.get("model_providers", {})
+    provider_settings = providers.get(provider)
+    if not provider_settings:
+        raise KeyError(f"Provider `{provider}` not found in {config_file}")
+    base_url = provider_settings.get("base_url")
+    env_key = provider_settings.get("env_key")
+    if not base_url:
+        raise KeyError(f"Provider `{provider}` is missing `base_url`.")
+    if not env_key:
+        raise KeyError(f"Provider `{provider}` is missing `env_key`.")
+    return str(base_url), str(env_key)
+
+
+def build_responses_url(base_url: str) -> str:
+    normalized = base_url.rstrip("/")
+    if normalized.endswith("/openai/v1/responses"):
+        return normalized
+    if normalized.endswith("/openai/v1"):
+        return normalized + "/responses"
+    if normalized.endswith("/openai"):
+        return normalized + "/v1/responses"
+    return normalized + "/openai/v1/responses"
+
+
+def extract_response_output_text(response_payload: dict) -> str:
+    chunks: list[str] = []
+    output = response_payload.get("output", [])
+    if isinstance(output, list):
+        for item in output:
+            if not isinstance(item, dict):
+                continue
+            content = item.get("content", [])
+            if not isinstance(content, list):
+                continue
+            for part in content:
+                if not isinstance(part, dict):
+                    continue
+                if part.get("type") in {"output_text", "text"}:
+                    text = part.get("text")
+                    if isinstance(text, str) and text.strip():
+                        chunks.append(text.strip())
+    top_level_text = response_payload.get("output_text")
+    if isinstance(top_level_text, str) and top_level_text.strip():
+        chunks.append(top_level_text.strip())
+    return "\n".join(chunks).strip()
+
+
+def normalize_topic_label(label: str, fallback: str = "general") -> str:
+    first_line = label.strip().splitlines()[0] if label.strip() else ""
+    first_line = first_line.strip().strip("`").strip("\"'")
+    tokens = re.findall(r"[a-z0-9]+", first_line.lower())
+    if not tokens:
+        return fallback
+    return "-".join(tokens[:6]) or fallback
+
+
+def build_topic_label_prompt(segment_text: str) -> str:
+    return "\n".join(
+        [
+            "You are labeling segments of a Claude Code session for future retrieval.",
+            "Read the excerpt and propose a 2-4 word lowercase hyphenated topic label.",
+            "The label should describe what this segment is actually about, not the tools used.",
+            "Examples: soul-prompt-evaluation, stone-authoring, loop-diagnosis, memory-architecture-design.",
+            "Respond with only the label, nothing else.",
+            "",
+            "Segment excerpt:",
+            "<segment_excerpt>",
+            segment_text,
+            "</segment_excerpt>",
+        ]
+    )
+
+
+def request_topic_label_from_model(
+    segment_text: str,
+    *,
+    model: str,
+    provider: str = "azure",
+    config_file: str | Path = Path.home() / ".codex" / "config.toml",
+    timeout: float = 60.0,
+) -> str:
+    base_url, env_key_name = load_provider_settings(config_file, provider)
+    api_key = os.environ.get(env_key_name)
+    if not api_key:
+        raise RuntimeError(f"Environment variable `{env_key_name}` is not set.")
+
+    payload = {
+        "model": model,
+        "text": {"format": {"type": "text"}, "verbosity": "low"},
+        "max_output_tokens": 32,
+        "input": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": build_topic_label_prompt(segment_text),
+                    }
+                ],
+            }
+        ],
+    }
+    request = urllib.request.Request(
+        build_responses_url(base_url),
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "api-key": api_key,
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            raw_body = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"HTTP {exc.code} from topic-label model: {error_body}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"Network error calling topic-label model: {exc}") from exc
+
+    response_payload = json.loads(raw_body)
+    text = extract_response_output_text(response_payload)
+    if not text:
+        raise RuntimeError("Topic-label model returned no extractable text.")
+    return text
+
+
+def label_segment_topic(
+    segment_text: str,
+    taxonomy_topic: str,
+    *,
+    topic_model: str,
+    topic_warnings: list[str] | None = None,
+    topic_timeout: float = 60.0,
+) -> tuple[str, str]:
+    if topic_model == "keyword":
+        return taxonomy_topic, "keyword"
+
+    excerpt = segment_text.strip()[:2000]
+    if not excerpt:
+        return taxonomy_topic, "keyword-empty"
+
+    try:
+        raw_label = request_topic_label_from_model(
+            excerpt,
+            model=topic_model,
+            timeout=topic_timeout,
+        )
+        normalized = normalize_topic_label(raw_label, fallback=taxonomy_topic)
+        return normalized, "llm"
+    except Exception as exc:
+        if topic_warnings is not None:
+            topic_warnings.append(
+                f"Topic labeling fell back to keyword topic `{taxonomy_topic}`: {exc}"
+            )
+        return taxonomy_topic, "keyword-fallback"
+
+
 def segment_title(topic: str, turns: list[Turn]) -> str:
     words = re.findall(r"[a-z0-9]+", turns[0].user_preview.lower())
     preview_slug = "-".join(words[:6]) or "segment"
@@ -530,12 +698,69 @@ def segment_title(topic: str, turns: list[Turn]) -> str:
     return preview_slug
 
 
+def build_segment_from_turn_group(
+    group: list[Turn],
+    *,
+    segment_id: str,
+    topic_model: str,
+    topic_warnings: list[str] | None = None,
+    topic_timeout: float = 60.0,
+) -> Segment:
+    topic_counter = Counter()
+    flags = set()
+    combined_text_parts = []
+    for turn in group:
+        topic_counter.update(turn.topic_scores)
+        flags.update(turn.flags)
+        combined_text_parts.extend(
+            part for part in [turn.user_text, turn.assistant_text] if part
+        )
+    taxonomy_topic = dominant_topic(topic_counter)
+    combined_text = "\n\n".join(combined_text_parts)
+    topic, topic_source = label_segment_topic(
+        combined_text,
+        taxonomy_topic,
+        topic_model=topic_model,
+        topic_warnings=topic_warnings,
+        topic_timeout=topic_timeout,
+    )
+    tier, rationale = tier_from_scores(combined_text, taxonomy_topic, sorted(flags))
+    title_base = segment_title(topic, group)
+    return Segment(
+        segment_id=segment_id,
+        title=slugify(title_base, fallback=segment_id),
+        topic=topic,
+        topic_source=topic_source,
+        taxonomy_topic=taxonomy_topic,
+        tier=tier,
+        priority=priority_for_tier(tier),
+        record_start=group[0].record_start,
+        record_end=group[-1].record_end,
+        start_user_uuid=group[0].user_uuid,
+        end_user_uuid_exclusive=group[-1].next_user_uuid,
+        turn_start=group[0].turn_id,
+        turn_end=group[-1].turn_id,
+        turn_count=len(group),
+        text_chars=sum(turn.text_chars for turn in group),
+        text_tokens_est=sum(turn.text_tokens_est for turn in group),
+        date_start=group[0].date,
+        date_end=group[-1].date,
+        flags=sorted(flags),
+        rationale=rationale,
+        user_preview=group[0].user_preview,
+        assistant_preview=group[0].assistant_preview,
+    )
+
+
 def plan_segments(
     turns: list[Turn],
     target_tokens: int = 7500,
     max_tokens: int = 11000,
     min_turns: int = 2,
     start_index: int = 1,
+    topic_model: str = "gpt-5.4",
+    topic_warnings: list[str] | None = None,
+    topic_timeout: float = 60.0,
 ) -> list[Segment]:
     if not turns:
         return []
@@ -615,46 +840,16 @@ def plan_segments(
     if current:
         groups.append(current)
 
-    segments: list[Segment] = []
-    for segment_index, group in enumerate(groups, start=start_index):
-        topic_counter = Counter()
-        flags = set()
-        combined_text_parts = []
-        for turn in group:
-            topic_counter.update(turn.topic_scores)
-            flags.update(turn.flags)
-            combined_text_parts.extend(
-                part for part in [turn.user_text, turn.assistant_text] if part
-            )
-        topic = dominant_topic(topic_counter)
-        combined_text = "\n\n".join(combined_text_parts)
-        tier, rationale = tier_from_scores(combined_text, topic, sorted(flags))
-        title_base = segment_title(topic, group)
-        segments.append(
-            Segment(
-                segment_id=f"seg-{segment_index:03d}",
-                title=slugify(title_base, fallback=f"segment-{segment_index:03d}"),
-                topic=topic,
-                tier=tier,
-                priority=priority_for_tier(tier),
-                record_start=group[0].record_start,
-                record_end=group[-1].record_end,
-                start_user_uuid=group[0].user_uuid,
-                end_user_uuid_exclusive=group[-1].next_user_uuid,
-                turn_start=group[0].turn_id,
-                turn_end=group[-1].turn_id,
-                turn_count=len(group),
-                text_chars=sum(turn.text_chars for turn in group),
-                text_tokens_est=sum(turn.text_tokens_est for turn in group),
-                date_start=group[0].date,
-                date_end=group[-1].date,
-                flags=sorted(flags),
-                rationale=rationale,
-                user_preview=group[0].user_preview,
-                assistant_preview=group[0].assistant_preview,
-            )
+    return [
+        build_segment_from_turn_group(
+            group,
+            segment_id=f"seg-{segment_index:03d}",
+            topic_model=topic_model,
+            topic_warnings=topic_warnings,
+            topic_timeout=topic_timeout,
         )
-    return segments
+        for segment_index, group in enumerate(groups, start=start_index)
+    ]
 
 
 def session_id_from_records(records: list[dict]) -> str:
@@ -713,6 +908,9 @@ def render_map_markdown(
         lines.append(f"- Estimated text tokens: ~{segment.text_tokens_est}")
         lines.append(f"- Tier: `{segment.tier}`")
         lines.append(f"- Topic: `{segment.topic}`")
+        lines.append(f"- Topic source: `{segment.topic_source}`")
+        if segment.taxonomy_topic and segment.taxonomy_topic != segment.topic:
+            lines.append(f"- Taxonomy topic: `{segment.taxonomy_topic}`")
         lines.append(f"- Priority: `{segment.priority}`")
         lines.append(f"- Rationale: {segment.rationale}")
         if segment.flags:
@@ -739,14 +937,21 @@ def render_plan_json(
     records: list[dict],
     turns: list[Turn],
     segments: list[Segment],
+    *,
+    topic_model: str,
+    topic_warnings: list[str] | None = None,
 ) -> dict:
     return {
         "session_file": str(session_file),
         "session_id": session_id_from_records(records),
-        "plan_format_version": 2,
+        "plan_format_version": 3,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "tool": "session_memory.py",
         "summary_style_reference": SUMMARY_STYLE_REFERENCE,
+        "topic_labeling": {
+            "model": topic_model,
+            "warnings": topic_warnings or [],
+        },
         "turns": [serialize_turn(turn) for turn in turns],
         "segments": [asdict(segment) for segment in segments],
     }
@@ -758,6 +963,70 @@ def write_json(path: Path, payload: dict) -> None:
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text())
+
+
+def stable_boundary_plan_basis(plan: dict) -> dict:
+    stable_turn_keys = (
+        "turn_id",
+        "record_start",
+        "record_end",
+        "user_uuid",
+        "next_user_uuid",
+        "timestamp",
+        "date",
+        "text_tokens_est",
+        "user_preview",
+        "assistant_preview",
+        "flags",
+        "topic_scores",
+    )
+    stable_segment_keys = (
+        "segment_id",
+        "title",
+        "topic",
+        "topic_source",
+        "taxonomy_topic",
+        "tier",
+        "priority",
+        "record_start",
+        "record_end",
+        "start_user_uuid",
+        "end_user_uuid_exclusive",
+        "turn_start",
+        "turn_end",
+        "turn_count",
+        "text_chars",
+        "text_tokens_est",
+        "date_start",
+        "date_end",
+        "flags",
+        "rationale",
+        "user_preview",
+        "assistant_preview",
+    )
+    return {
+        "session_file": plan.get("session_file"),
+        "session_id": plan.get("session_id"),
+        "plan_format_version": plan.get("plan_format_version"),
+        "tool": plan.get("tool"),
+        "summary_style_reference": plan.get("summary_style_reference"),
+        "turns": [
+            {key: turn.get(key) for key in stable_turn_keys if key in turn}
+            for turn in plan.get("turns", [])
+            if isinstance(turn, dict)
+        ],
+        "segments": [
+            {key: segment.get(key) for key in stable_segment_keys if key in segment}
+            for segment in plan.get("segments", [])
+            if isinstance(segment, dict)
+        ],
+    }
+
+
+def boundary_plan_basis_hash(plan: dict) -> str:
+    payload = stable_boundary_plan_basis(plan)
+    encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def serialize_turn(turn: Turn) -> dict:
@@ -806,6 +1075,8 @@ def deserialize_plan_segment(payload: dict) -> Segment:
         segment_id=payload["segment_id"],
         title=payload["title"],
         topic=payload["topic"],
+        topic_source=payload.get("topic_source", "keyword"),
+        taxonomy_topic=payload.get("taxonomy_topic", payload.get("topic", "general")),
         tier=payload["tier"],
         priority=payload["priority"],
         record_start=payload["record_start"],
@@ -946,6 +1217,61 @@ def reindex_turns(turns: list[Turn], start_turn_id: int) -> list[Turn]:
     return reindexed
 
 
+def build_live_turn_lookup(turns: list[Turn]) -> tuple[dict[str, Turn], dict[int, Turn]]:
+    by_uuid = {
+        turn.user_uuid: turn
+        for turn in turns
+        if isinstance(turn.user_uuid, str) and turn.user_uuid
+    }
+    by_id = {turn.turn_id: turn for turn in turns}
+    return by_uuid, by_id
+
+
+def hydrate_plan_turns(plan: dict, live_turns: list[Turn]) -> list[Turn]:
+    by_uuid, by_id = build_live_turn_lookup(live_turns)
+    hydrated: list[Turn] = []
+    for payload in plan.get("turns", []):
+        user_uuid = payload.get("user_uuid")
+        live_turn = by_uuid.get(user_uuid) if isinstance(user_uuid, str) and user_uuid else None
+        if live_turn is None:
+            turn_id = payload.get("turn_id")
+            if isinstance(turn_id, int):
+                live_turn = by_id.get(turn_id)
+        hydrated.append(live_turn if live_turn is not None else deserialize_plan_turn(payload))
+    return hydrated
+
+
+def segment_turns_from_hydrated_plan(plan_turns: list[Turn], segment: dict) -> list[Turn]:
+    turn_start = segment.get("turn_start")
+    turn_end = segment.get("turn_end")
+    if not isinstance(turn_start, int) or not isinstance(turn_end, int):
+        raise SystemExit(f"Segment `{segment.get('segment_id')}` is missing turn boundaries.")
+    return [turn for turn in plan_turns if turn_start <= turn.turn_id <= turn_end]
+
+
+def split_turn_index_for_uuid(segment_turns: list[Turn], at_turn_uuid: str) -> int | None:
+    for index, turn in enumerate(segment_turns):
+        if turn.user_uuid == at_turn_uuid:
+            return index
+    return None
+
+
+def hydrate_turn_group_by_id(
+    segment_turns: list[Turn],
+    live_turns_by_id: dict[int, Turn],
+) -> list[Turn]:
+    return [live_turns_by_id.get(turn.turn_id, turn) for turn in segment_turns]
+
+
+def next_generated_segment_id(segments: list[dict]) -> str:
+    max_index = 0
+    for segment in segments:
+        segment_index = segment_index_from_id(segment.get("segment_id"))
+        if segment_index is not None:
+            max_index = max(max_index, segment_index)
+    return f"seg-{max_index + 1:03d}"
+
+
 def resolve_segment(plan: dict, segment_id: str) -> dict:
     for segment in plan.get("segments", []):
         if segment.get("segment_id") == segment_id:
@@ -1013,6 +1339,373 @@ def update_plan_segment(plan_path: Path, segment_id: str, **updates) -> None:
             segment.update(**updates)
             break
     write_json(plan_path, payload)
+
+
+VALID_SEGMENT_TIERS = {"aggressive", "medium", "light", "preserve"}
+
+
+def resolve_boundary_plan_segment_index(plan: dict, segment_id: str) -> int:
+    for index, segment in enumerate(plan.get("segments", [])):
+        if segment.get("segment_id") == segment_id:
+            return index
+    raise SystemExit(f"Boundary plan references unknown segment `{segment_id}`.")
+
+
+def reset_segment_artifacts(segment: dict) -> None:
+    segment["status"] = "planned"
+    segment["segment_jsonl"] = None
+    segment["transcript_md"] = None
+    segment["summary_md"] = None
+    segment["output_session"] = None
+
+
+def apply_segment_manual_reclassify(segment: dict, edit: dict, note: str) -> None:
+    changed_fields = []
+    if "tier" in edit and edit.get("tier") is not None:
+        segment["tier"] = edit["tier"]
+        segment["priority"] = priority_for_tier(edit["tier"])
+        changed_fields.append(f"tier={edit['tier']}")
+    if "_normalized_topic" in edit:
+        segment["topic"] = edit["_normalized_topic"]
+        segment["taxonomy_topic"] = edit["_normalized_topic"]
+        segment["topic_source"] = "manual"
+        changed_fields.append(f"topic={edit['_normalized_topic']}")
+    rationale = "Manually reclassified per boundary plan"
+    if changed_fields:
+        rationale += f" ({', '.join(changed_fields)})"
+    if note:
+        rationale += f": {note}"
+    segment["rationale"] = rationale
+    reset_segment_artifacts(segment)
+
+
+def validate_boundary_plan(
+    boundary_plan: dict,
+    base_plan: dict,
+    plan_turns: list[Turn],
+) -> list[dict]:
+    plan_session_id = boundary_plan.get("session_id")
+    base_session_id = base_plan.get("session_id")
+    if plan_session_id and base_session_id and plan_session_id != base_session_id:
+        raise SystemExit(
+            "Boundary plan belongs to a different session id:\n"
+            f"- Boundary plan: `{plan_session_id}`\n"
+            f"- Base plan: `{base_session_id}`"
+        )
+
+    expected_hash = boundary_plan.get("based_on_map")
+    if not isinstance(expected_hash, str) or not expected_hash.strip():
+        raise SystemExit("Boundary plan is missing `based_on_map`.")
+    actual_hash = boundary_plan_basis_hash(base_plan)
+    if expected_hash != actual_hash:
+        raise SystemExit(
+            "Boundary plan does not match the current memory plan.\n"
+            "The map has changed since this boundary plan was written.\n"
+            f"- Boundary plan based_on_map: `{expected_hash}`\n"
+            f"- Current memory-plan.json: `{actual_hash}`"
+        )
+
+    edits = boundary_plan.get("edits", [])
+    if not isinstance(edits, list):
+        raise SystemExit("Boundary plan `edits` must be a list.")
+
+    validated: list[dict] = []
+    working_plan = copy.deepcopy(base_plan)
+    for position, edit in enumerate(edits, start=1):
+        if not isinstance(edit, dict):
+            raise SystemExit(f"Boundary plan edit #{position} is not an object.")
+        op = edit.get("op")
+        if op not in {"rename", "reclassify", "merge", "split"}:
+            raise SystemExit(
+                f"Boundary plan edit #{position} uses unsupported op `{op}`.\n"
+                "Supported ops are `rename`, `reclassify`, `merge`, and `split`."
+            )
+
+        normalized = dict(edit)
+        normalized["_position"] = position
+
+        if op == "merge":
+            segment_ids = edit.get("segment_ids")
+            if not isinstance(segment_ids, list) or len(segment_ids) < 2:
+                raise SystemExit(
+                    f"Boundary plan merge #{position} must include `segment_ids` with at least two segment ids."
+                )
+            normalized_ids = []
+            indexes = []
+            for segment_id in segment_ids:
+                if not isinstance(segment_id, str) or not segment_id:
+                    raise SystemExit(f"Boundary plan merge #{position} has an invalid segment id.")
+                normalized_ids.append(segment_id)
+                indexes.append(resolve_boundary_plan_segment_index(working_plan, segment_id))
+            if indexes != list(range(indexes[0], indexes[0] + len(indexes))):
+                raise SystemExit(
+                    f"Boundary plan merge #{position} must reference adjacent segments."
+                )
+            normalized["_segment_ids"] = normalized_ids
+            normalized["_segment_indexes"] = indexes
+            merged_segment_id = normalized_ids[0]
+            normalized["_result_segment_id"] = merged_segment_id
+            merged_turns: list[Turn] = []
+            for segment_id in normalized_ids:
+                merged_turns.extend(
+                    segment_turns_from_hydrated_plan(
+                        plan_turns,
+                        resolve_segment(working_plan, segment_id),
+                    )
+                )
+            rebuilt = asdict(
+                build_segment_from_turn_group(
+                    merged_turns,
+                    segment_id=merged_segment_id,
+                    topic_model="keyword",
+                )
+            )
+            reset_segment_artifacts(rebuilt)
+            working_plan["segments"][indexes[0]] = rebuilt
+            for index in reversed(indexes[1:]):
+                del working_plan["segments"][index]
+            validated.append(normalized)
+            continue
+
+        segment_id = edit.get("segment_id")
+        if not isinstance(segment_id, str) or not segment_id:
+            raise SystemExit(f"Boundary plan edit #{position} is missing `segment_id`.")
+        segment_index = resolve_boundary_plan_segment_index(working_plan, segment_id)
+        segment = working_plan["segments"][segment_index]
+        normalized["_segment_index"] = segment_index
+
+        if op == "rename":
+            title = edit.get("title")
+            if not isinstance(title, str) or not title.strip():
+                raise SystemExit(f"Boundary plan rename #{position} must include non-empty `title`.")
+            normalized["_normalized_title"] = slugify(title, fallback=segment.get("title") or "segment")
+
+        if op == "reclassify":
+            new_tier = edit.get("tier")
+            new_topic = edit.get("topic")
+            if new_tier is None and new_topic is None:
+                raise SystemExit(
+                    f"Boundary plan reclassify #{position} must set `tier`, `topic`, or both."
+                )
+            if new_tier is not None:
+                if not isinstance(new_tier, str) or new_tier not in VALID_SEGMENT_TIERS:
+                    raise SystemExit(
+                        f"Boundary plan reclassify #{position} has invalid tier `{new_tier}`."
+                    )
+            if new_topic is not None:
+                if not isinstance(new_topic, str) or not new_topic.strip():
+                    raise SystemExit(
+                        f"Boundary plan reclassify #{position} must use a non-empty `topic`."
+                    )
+                normalized["_normalized_topic"] = slugify(new_topic, fallback=segment.get("topic") or "general")
+
+            if new_tier is not None:
+                segment["tier"] = new_tier
+                segment["priority"] = priority_for_tier(new_tier)
+            if new_topic is not None:
+                segment["topic"] = normalized["_normalized_topic"]
+
+        if op == "split":
+            at_turn_uuid = edit.get("at_turn_uuid")
+            if not isinstance(at_turn_uuid, str) or not at_turn_uuid:
+                raise SystemExit(
+                    f"Boundary plan split #{position} must include `at_turn_uuid`."
+                )
+            segment_turns = segment_turns_from_hydrated_plan(plan_turns, segment)
+            split_index = split_turn_index_for_uuid(segment_turns, at_turn_uuid)
+            if split_index is None:
+                raise SystemExit(
+                    f"Boundary plan split #{position} uses `at_turn_uuid` not found in segment `{segment_id}`."
+                )
+            if split_index <= 0:
+                raise SystemExit(
+                    f"Boundary plan split #{position} must split after at least one turn in `{segment_id}`."
+                )
+            left_turns = segment_turns[:split_index]
+            right_turns = segment_turns[split_index:]
+            normalized["_split_turn_uuid"] = at_turn_uuid
+            normalized["_new_segment_id"] = next_generated_segment_id(working_plan["segments"])
+
+            new_topics = edit.get("new_topics")
+            if new_topics is not None:
+                if not isinstance(new_topics, list) or len(new_topics) != 2:
+                    raise SystemExit(
+                        f"Boundary plan split #{position} must use `new_topics` as a two-item list when provided."
+                    )
+                normalized["_normalized_new_topics"] = [
+                    slugify(topic, fallback="general") if isinstance(topic, str) and topic.strip() else None
+                    for topic in new_topics
+                ]
+            new_tiers = edit.get("new_tiers")
+            if new_tiers is not None:
+                if not isinstance(new_tiers, list) or len(new_tiers) != 2:
+                    raise SystemExit(
+                        f"Boundary plan split #{position} must use `new_tiers` as a two-item list when provided."
+                    )
+                for tier in new_tiers:
+                    if tier is not None and tier not in VALID_SEGMENT_TIERS:
+                        raise SystemExit(
+                            f"Boundary plan split #{position} has invalid tier `{tier}` in `new_tiers`."
+                        )
+                normalized["_validated_new_tiers"] = list(new_tiers)
+
+            left_segment = asdict(
+                build_segment_from_turn_group(
+                    left_turns,
+                    segment_id=segment_id,
+                    topic_model="keyword",
+                )
+            )
+            right_segment = asdict(
+                build_segment_from_turn_group(
+                    right_turns,
+                    segment_id=normalized["_new_segment_id"],
+                    topic_model="keyword",
+                )
+            )
+            reset_segment_artifacts(left_segment)
+            reset_segment_artifacts(right_segment)
+            working_plan["segments"][segment_index] = left_segment
+            working_plan["segments"].insert(segment_index + 1, right_segment)
+
+        if op == "rename":
+            segment["title"] = normalized["_normalized_title"]
+
+        validated.append(normalized)
+
+    return validated
+
+
+def apply_boundary_plan(
+    base_plan: dict,
+    boundary_plan: dict,
+    validated_edits: list[dict],
+    hydrated_turns: list[Turn],
+    plan_turns: list[Turn],
+    *,
+    topic_model: str,
+    topic_warnings: list[str] | None = None,
+    topic_timeout: float = 60.0,
+) -> dict:
+    edited_plan = copy.deepcopy(base_plan)
+    _, live_turns_by_id = build_live_turn_lookup(hydrated_turns)
+    for edit in validated_edits:
+        note = str(edit.get("note", "")).strip()
+        op = edit["op"]
+
+        if op == "merge":
+            indexes = edit["_segment_indexes"]
+            merged_turns: list[Turn] = []
+            for segment_id in edit["_segment_ids"]:
+                segment_turns = segment_turns_from_hydrated_plan(
+                    plan_turns,
+                    resolve_segment(edited_plan, segment_id),
+                )
+                merged_turns.extend(hydrate_turn_group_by_id(segment_turns, live_turns_by_id))
+            rebuilt = asdict(
+                build_segment_from_turn_group(
+                    merged_turns,
+                    segment_id=edit["_result_segment_id"],
+                    topic_model=topic_model,
+                    topic_warnings=topic_warnings,
+                    topic_timeout=topic_timeout,
+                )
+            )
+            reset_segment_artifacts(rebuilt)
+            edited_plan["segments"][indexes[0]] = rebuilt
+            for index in reversed(indexes[1:]):
+                del edited_plan["segments"][index]
+            continue
+
+        segment = edited_plan["segments"][edit["_segment_index"]]
+        if edit["op"] == "rename":
+            segment["title"] = edit["_normalized_title"]
+            continue
+
+        if op == "reclassify":
+            apply_segment_manual_reclassify(segment, edit, note)
+            continue
+
+        if op == "split":
+            plan_segment_turns = segment_turns_from_hydrated_plan(plan_turns, segment)
+            split_index = split_turn_index_for_uuid(
+                plan_segment_turns,
+                edit["_split_turn_uuid"],
+            )
+            if split_index is None:
+                raise SystemExit(
+                    f"Boundary plan split references a missing turn UUID in `{segment['segment_id']}`."
+                )
+            segment_turns = hydrate_turn_group_by_id(plan_segment_turns, live_turns_by_id)
+            left_turns = segment_turns[:split_index]
+            right_turns = segment_turns[split_index:]
+
+            left_segment = asdict(
+                build_segment_from_turn_group(
+                    left_turns,
+                    segment_id=segment["segment_id"],
+                    topic_model=topic_model,
+                    topic_warnings=topic_warnings,
+                    topic_timeout=topic_timeout,
+                )
+            )
+            right_segment = asdict(
+                build_segment_from_turn_group(
+                    right_turns,
+                    segment_id=edit["_new_segment_id"],
+                    topic_model=topic_model,
+                    topic_warnings=topic_warnings,
+                    topic_timeout=topic_timeout,
+                )
+            )
+            reset_segment_artifacts(left_segment)
+            reset_segment_artifacts(right_segment)
+
+            new_topics = edit.get("_normalized_new_topics")
+            new_tiers = edit.get("_validated_new_tiers")
+            left_override: dict = {}
+            right_override: dict = {}
+            if isinstance(new_topics, list):
+                if new_topics[0]:
+                    left_override.update({"topic": new_topics[0], "_normalized_topic": new_topics[0]})
+                if new_topics[1]:
+                    right_override.update({"topic": new_topics[1], "_normalized_topic": new_topics[1]})
+            if isinstance(new_tiers, list):
+                if new_tiers[0]:
+                    left_override["tier"] = new_tiers[0]
+                if new_tiers[1]:
+                    right_override["tier"] = new_tiers[1]
+            if left_override:
+                apply_segment_manual_reclassify(left_segment, left_override, note)
+            if right_override:
+                apply_segment_manual_reclassify(right_segment, right_override, note)
+
+            edited_plan["segments"][edit["_segment_index"]] = left_segment
+            edited_plan["segments"].insert(edit["_segment_index"] + 1, right_segment)
+
+    edited_plan["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    edited_plan["plan_format_version"] = max(int(edited_plan.get("plan_format_version", 0) or 0), 3)
+    edited_plan["tool"] = "session_memory.py (boundary-plan)"
+    edited_plan["topic_labeling"] = {
+        "model": topic_model,
+        "warnings": topic_warnings or [],
+    }
+    edited_plan["turns"] = [
+        serialize_turn(deserialize_plan_turn(turn_payload))
+        for turn_payload in edited_plan.get("turns", [])
+    ]
+    edited_plan["segments"] = [
+        asdict(deserialize_plan_segment(segment_payload))
+        for segment_payload in edited_plan.get("segments", [])
+    ]
+    edited_plan["boundary_plan"] = {
+        "source": boundary_plan.get("_source_path"),
+        "generated_at": boundary_plan.get("generated_at"),
+        "author_note": boundary_plan.get("author_note"),
+        "based_on_map": boundary_plan.get("based_on_map"),
+        "applied_edits": len(validated_edits),
+    }
+    return edited_plan
 
 
 def render_transcript(
@@ -1179,17 +1872,74 @@ def cmd_map(args: argparse.Namespace) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     map_path = out_dir / "session-map.md"
     plan_path = out_dir / "memory-plan.json"
+    edited_map_path = out_dir / "session-map.edited.md"
+    edited_plan_path = out_dir / "memory-plan.edited.json"
     records = load_session(str(session_file))
     session_id = session_id_from_records(records)
     existing_plan = read_json(plan_path) if plan_path.exists() else None
+    topic_warnings: list[str] = []
     existing_segment_max = max_existing_segment_index(
         existing_plan,
         out_dir / "segments",
     )
+    if args.validate_only and not args.plan:
+        raise SystemExit("`map --validate-only` requires `--plan`.")
+    if args.plan and args.overwrite_existing:
+        raise SystemExit("`map --plan` cannot be combined with `--overwrite-existing`.")
     if existing_plan and not args.overwrite_existing:
         ensure_existing_plan_matches_session(existing_plan, session_file, session_id)
 
     turns = build_turns(records)
+
+    if args.plan:
+        if not existing_plan:
+            raise SystemExit(
+                "`map --plan` requires an existing `memory-plan.json` in the output directory.\n"
+                "Run `map` once without `--plan` first."
+            )
+        plan_turns = [
+            deserialize_plan_turn(turn_payload)
+            for turn_payload in existing_plan.get("turns", [])
+        ]
+        hydrated_existing_turns = hydrate_plan_turns(existing_plan, turns)
+        boundary_plan_path = Path(args.plan).expanduser().resolve()
+        boundary_plan = read_json(boundary_plan_path)
+        boundary_plan["_source_path"] = str(boundary_plan_path)
+        validated_edits = validate_boundary_plan(boundary_plan, existing_plan, plan_turns)
+        if args.validate_only:
+            print(f"Boundary plan is valid: {boundary_plan_path}")
+            print(f"Base plan hash: {boundary_plan_basis_hash(existing_plan)}")
+            print(f"Validated edits: {len(validated_edits)}")
+            return
+
+        edited_plan = apply_boundary_plan(
+            existing_plan,
+            boundary_plan,
+            validated_edits,
+            hydrated_existing_turns,
+            plan_turns,
+            topic_model=args.topic_model,
+            topic_warnings=topic_warnings,
+            topic_timeout=args.topic_timeout,
+        )
+        edited_turns = [
+            deserialize_plan_turn(turn_payload)
+            for turn_payload in edited_plan.get("turns", [])
+        ]
+        edited_segments = [
+            deserialize_plan_segment(segment_payload)
+            for segment_payload in edited_plan.get("segments", [])
+        ]
+        edited_map_md = render_map_markdown(session_file, records, edited_turns, edited_segments)
+        edited_map_path.write_text(edited_map_md)
+        write_json(edited_plan_path, edited_plan)
+        print(f"Wrote edited map: {edited_map_path}")
+        print(f"Wrote edited plan: {edited_plan_path}")
+        print(f"Applied boundary plan: {boundary_plan_path}")
+        print(f"Edited segments: {len(validated_edits)}")
+        for warning in topic_warnings:
+            print(f"Warning: {warning}")
+        return
 
     if existing_plan and not args.overwrite_existing:
         existing_turns = [
@@ -1223,6 +1973,9 @@ def cmd_map(args: argparse.Namespace) -> None:
             max_tokens=args.max_segment_tokens,
             min_turns=args.min_turns,
             start_index=existing_segment_max + 1,
+            topic_model=args.topic_model,
+            topic_warnings=topic_warnings,
+            topic_timeout=args.topic_timeout,
         )
         combined_turns = existing_turns + appended_turns
         combined_segments = existing_segments + appended_segments
@@ -1230,10 +1983,14 @@ def cmd_map(args: argparse.Namespace) -> None:
         plan_json = {
             "session_file": str(session_file),
             "session_id": session_id,
-            "plan_format_version": 2,
+            "plan_format_version": 3,
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
             "tool": "session_memory.py",
             "summary_style_reference": SUMMARY_STYLE_REFERENCE,
+            "topic_labeling": {
+                "model": args.topic_model,
+                "warnings": topic_warnings,
+            },
             "turns": [serialize_turn(turn) for turn in combined_turns],
             "segments": [asdict(segment) for segment in combined_segments],
         }
@@ -1244,9 +2001,19 @@ def cmd_map(args: argparse.Namespace) -> None:
             max_tokens=args.max_segment_tokens,
             min_turns=args.min_turns,
             start_index=existing_segment_max + 1 if args.overwrite_existing else 1,
+            topic_model=args.topic_model,
+            topic_warnings=topic_warnings,
+            topic_timeout=args.topic_timeout,
         )
         map_md = render_map_markdown(session_file, records, turns, segments)
-        plan_json = render_plan_json(session_file, records, turns, segments)
+        plan_json = render_plan_json(
+            session_file,
+            records,
+            turns,
+            segments,
+            topic_model=args.topic_model,
+            topic_warnings=topic_warnings,
+        )
 
     map_path.write_text(map_md)
     write_json(plan_path, plan_json)
@@ -1255,6 +2022,8 @@ def cmd_map(args: argparse.Namespace) -> None:
     print(f"Wrote plan: {plan_path}")
     print(f"Substantive turns: {len(turns)}")
     print(f"Candidate segments: {len(plan_json['segments'])}")
+    for warning in topic_warnings:
+        print(f"Warning: {warning}")
     splice_placeholder_count = count_existing_splice_placeholders(records)
     if splice_placeholder_count:
         print(
@@ -2716,6 +3485,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory where the map and plan should be written.",
     )
     map_parser.add_argument(
+        "--plan",
+        help="Optional boundary-plan JSON to validate/apply against the existing memory-plan.json in --out-dir.",
+    )
+    map_parser.add_argument(
+        "--topic-model",
+        default="gpt-5.4",
+        help="Topic labeling model for segment topics. Use `keyword` to disable LLM labeling.",
+    )
+    map_parser.add_argument(
+        "--topic-timeout",
+        type=float,
+        default=60.0,
+        help="Timeout in seconds for each topic-label model call.",
+    )
+    map_parser.add_argument(
         "--target-segment-tokens",
         type=int,
         default=7500,
@@ -2737,6 +3521,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--overwrite-existing",
         action="store_true",
         help="Rebuild an existing session-map.md and memory-plan.json instead of appending only new turns.",
+    )
+    map_parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate a provided boundary plan without writing edited outputs.",
     )
     map_parser.set_defaults(func=cmd_map)
 
