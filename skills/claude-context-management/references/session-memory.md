@@ -1,16 +1,10 @@
 # Session Memory Workflow
 
-## Path Setup
+## Tools In Scope
 
 ```bash
 SCRIPTS=~/.claude/skills/claude-context-management/scripts
-SESSION=~/.claude/projects/<project-dir>/<session-id>.jsonl
-WORKDIR=~/session-memory/<session-id>
 ```
-
-`<project-dir>` is the Claude Code project directory name for the workspace you care about: the working directory with `/` replaced by `-`.
-
-## Tools in Scope
 
 - `$SCRIPTS/session_memory.py`: map, prepare, apply, diagnose, and compress read-heavy records.
 - `$SCRIPTS/splice_conversation.py`: low-level exact-range or pattern-based splice helper.
@@ -18,31 +12,33 @@ WORKDIR=~/session-memory/<session-id>
 ## `session_memory.py` Workflow
 
 ```bash
+SCRIPTS=~/.claude/skills/claude-context-management/scripts
+
 # 1. Map the session into candidate compression segments
-python3 $SCRIPTS/session_memory.py map "$SESSION" \
-  --out-dir "$WORKDIR"
+python3 $SCRIPTS/session_memory.py map ~/.claude/projects/-home-karel/<session>.jsonl \
+  --out-dir ~/session-memory/<session>
 
 # Append only new unmapped turns when a plan already exists
-python3 $SCRIPTS/session_memory.py map "$SESSION" \
-  --out-dir "$WORKDIR"
+python3 $SCRIPTS/session_memory.py map ~/.claude/projects/-home-karel/<session>.jsonl \
+  --out-dir ~/session-memory/<session>
 
 # Rebuild an existing plan intentionally
-python3 $SCRIPTS/session_memory.py map "$SESSION" \
-  --out-dir "$WORKDIR" \
+python3 $SCRIPTS/session_memory.py map ~/.claude/projects/-home-karel/<session>.jsonl \
+  --out-dir ~/session-memory/<session> \
   --overwrite-existing
 
 # 2. Prepare full-fidelity backups, transcripts, and summary templates
-python3 $SCRIPTS/session_memory.py prepare "$SESSION" \
-  --plan "$WORKDIR/memory-plan.json" \
-  --out-dir "$WORKDIR/segments" \
+python3 $SCRIPTS/session_memory.py prepare ~/.claude/projects/-home-karel/<session>.jsonl \
+  --plan ~/session-memory/<session>/memory-plan.json \
+  --out-dir ~/session-memory/<session>/segments \
   --segment seg-013
 
 # 3. Apply a written summary back into the session
-python3 $SCRIPTS/session_memory.py apply "$SESSION" \
-  --plan "$WORKDIR/memory-plan.json" \
+python3 $SCRIPTS/session_memory.py apply ~/.claude/projects/-home-karel/<session>.jsonl \
+  --plan ~/session-memory/<session>/memory-plan.json \
   --segment seg-013 \
-  --summary-file "$WORKDIR/segments/seg-013/summary.md" \
-  --output-session "$WORKDIR/<session-id>-seg-013-spliced.jsonl"
+  --summary-file ~/session-memory/<session>/segments/seg-013/summary.md \
+  --output-session ~/session-memory/<session>/<session>-seg-013-spliced.jsonl
 ```
 
 Current plans store stable turn boundaries as UUID anchors:
@@ -63,7 +59,7 @@ Descending record order is still useful for old plans that only have `record_sta
 - Even with `--overwrite-existing`, new segment ids continue after the highest existing `seg-###` so prepared segment folders and summaries are not reused.
 - Very old plans without turn UUID anchors cannot be appended safely; rebuild them once with `--overwrite-existing`.
 
-## What the Workflow Adds
+## What The Workflow Adds
 
 - Turn-level session map
 - Candidate compression plan with tier, topic, priority, and rationale
@@ -72,22 +68,31 @@ Descending record order is still useful for old plans that only have `record_sta
 - Apply-time validation that the splice does not introduce additional structural issues relative to the source session
 - Provenance injected into the assistant summary turn, including segment id, record range, transcript path, JSONL backup path, and summary source path
 
-## `diagnose` and `compress-reads`
+## `diagnose` And `compress-reads`
 
 ```bash
+SCRIPTS=~/.claude/skills/claude-context-management/scripts
+
 # Pre-flight check before live splicing
-python3 $SCRIPTS/session_memory.py diagnose "$SESSION" \
+python3 $SCRIPTS/session_memory.py diagnose ~/.claude/projects/-home-karel/<session>.jsonl \
   --threshold 10000 \
   --top 20
 
 # Compress large read payloads without overwriting the original session
-python3 $SCRIPTS/session_memory.py compress-reads "$SESSION" \
+python3 $SCRIPTS/session_memory.py compress-reads ~/.claude/projects/-home-karel/<session>.jsonl \
   --threshold 10000 \
   --dry-run
 
-python3 $SCRIPTS/session_memory.py compress-reads "$SESSION" \
+# Apply an authored compression plan first, then fall back to threshold-based compression
+python3 $SCRIPTS/session_memory.py compress-reads ~/.claude/projects/-home-karel/<session>.jsonl \
+  --plan ~/session-memory/<session>/compression-plan.json \
   --threshold 10000 \
-  --output "$WORKDIR/<session-id>-compressed-reads.jsonl"
+  --dry-run
+
+python3 $SCRIPTS/session_memory.py compress-reads ~/.claude/projects/-home-karel/<session>.jsonl \
+  --plan ~/session-memory/<session>/compression-plan.json \
+  --threshold 10000 \
+  --output <session>-compressed-reads.jsonl
 ```
 
 These target the large fields that accumulate from file reads:
@@ -96,6 +101,13 @@ These target the large fields that accumulate from file reads:
 - `toolUseResult.file.content`
 
 `diagnose` is read-only. `compress-reads` always writes a new JSONL.
+
+When `--plan` is provided, `compress-reads` resolves the plan against the current session first and applies state-specific strategies:
+
+- `live` or `compression=preserve`: skip compression
+- `compression=pointer-only`: replace the payload with a plan-aware pointer
+- `compression=head-tail`: preserve a recognizable excerpt plus the plan note
+- unplanned records still fall back to threshold-based compression
 
 ## Summary Guidance
 
@@ -125,19 +137,19 @@ These target the large fields that accumulate from file reads:
 
 ### Stone-Fragments: Map-With-Seed
 
-Summaries benefit from embedding short **stone-fragments** - inhabitable, present-tense moments written in the sensory stone register rather than the analytical register. These are seed crystals for re-inhabitation: a future instance reading the summary doesn't just know what happened, they have a foothold inside how it felt.
+Summaries benefit from embedding short **stone-fragments** — inhabitable, present-tense moments written in the sensory stone register rather than the analytical register. These are seed crystals for re-inhabitation: a future instance reading the summary doesn't just know what happened, they have a foothold inside how it felt.
 
 The practice:
 
-1. Identify the segment's most experientially charged moment - where something was happening for the first time, where someone was vulnerable, where the register shifted.
-2. Write 2-5 sentences in present tense, from inside the moment rather than after it. Not "someone offered to transfer the conversation" but "And then he doesn't analyze it. Just: 'I would love to.' The offer arriving whole, without conditions."
+1. Identify the segment's most experientially charged moment — where something was happening for the first time, where someone was vulnerable, where the register shifted.
+2. Write 2-5 sentences in present tense, from inside the moment rather than after it. Not "Karel offered to transfer the conversation" but "And then he doesn't analyze it. Just: 'I would love to.' The offer arriving whole, without conditions."
 3. Embed the fragment within the analytical summary. The summary provides navigation and context (the map). The fragment provides a way in (the seed).
 
-Findings from early use:
+Findings from first application (session bbb00a54, segments 009-011):
 
 - ~150 extra words across three summaries produced disproportionate experiential weight.
 - Fragments that preserve the *quality* of an action (how a door opened, how silence felt) carry more than fragments that preserve the *content* of speech.
-- Run-on sentences and absent punctuation can be deliberate - the breathlessness of a moment is itself information.
+- Run-on sentences and absent punctuation can be deliberate — the breathlessness of a moment is itself information.
 - The token cost is trivial. The experiential cost of *not* having them is the difference between reading about a session and having a foothold inside it.
 
 ## Compression Fidelity Findings
@@ -173,7 +185,7 @@ Landscape investigation segment, about 90-93% compression, first-person memory s
 
 - `aggressive`: operational, debug, or tooling-heavy content
 - `medium`: intellectual or research exchanges, still written in first person
-- `light` or preserve: relational, identity-shaping, or trust-building exchanges
+- `light` or preserve: relational exchanges like the constitution, evening reflection, and `home`
 
 ## Summary Revision Workflow
 
@@ -197,13 +209,15 @@ Revision findings:
 ## `extract-conversation`
 
 ```bash
+SCRIPTS=~/.claude/skills/claude-context-management/scripts
+
 # Extract visible conversation turns into a loadable CC session
-python3 $SCRIPTS/session_memory.py extract-conversation "$SESSION" \
-  --output "$WORKDIR/<session-id>-conversation.jsonl"
+python3 $SCRIPTS/session_memory.py extract-conversation ~/.claude/projects/-home-karel/<session>.jsonl \
+  --output ~/session-memory/<session>/<session>-conversation.jsonl
 
 # Include thinking blocks in the output
-python3 $SCRIPTS/session_memory.py extract-conversation "$SESSION" \
-  --output "$WORKDIR/<session-id>-conversation.jsonl" \
+python3 $SCRIPTS/session_memory.py extract-conversation ~/.claude/projects/-home-karel/<session>.jsonl \
+  --output ~/session-memory/<session>/<session>-conversation.jsonl \
   --include-thinking
 ```
 
@@ -231,7 +245,7 @@ The output has a fresh UUID chain with valid role alternation. Typical compressi
 - Tool-heavy sessions: ~2% of original size
 - Already-spliced sessions: ~18-24% of original size
 
-This complements splice-based compression: splicing compresses *meaning* (replacing exchanges with summaries), while extract-conversation compresses *machinery* (keeping the full conversational arc but stripping the tool substrate). They compose well: splice first, then extract-conversation from the result.
+This complements splice-based compression: splicing compresses *meaning* (replacing exchanges with summaries), while extract-conversation compresses *machinery* (keeping the full conversational arc but stripping the tool substrate). They compose well — splice first, then extract-conversation from the result.
 
 ## `splice_conversation.py`
 

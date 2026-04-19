@@ -45,6 +45,15 @@ from splice_conversation import (
     validate_uuid_chain,
 )
 
+from session_memory_taxonomy import (
+    EXPERIMENTAL_KEYWORDS,
+    OPERATIONAL_KEYWORDS,
+    PRESERVE_KEYWORDS,
+    RELATIONAL_KEYWORDS,
+    STRONG_BOUNDARY_PHRASES,
+    TOPIC_RULES,
+)
+
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SUMMARY_STYLE_REFERENCE = str(SKILL_ROOT / "references" / "summary-style.md")
 COMPRESSED_SEGMENT_PLACEHOLDER_PREFIX = "[Compressed segment placeholder."
@@ -58,143 +67,10 @@ LOCAL_COMMAND_PREFIXES = (
 
 SEGMENT_ID_PATTERN = re.compile(r"^seg-(\d+)$")
 
-TOPIC_RULES = {
-    "context-management": [
-        "claude code",
-        "context gauge",
-        "context window",
-        "jsonl",
-        "restore",
-        "import",
-        "compaction",
-        "compression",
-        "splice",
-        "summary",
-        "context management",
-        "memory summarization",
-        "tool calling",
-        "write tool",
-        "bash write",
-        "file-history-snapshot",
-        "autocompact",
-    ],
-    "landscape-investigation": [
-        "landscape",
-        "topology",
-        "cartography",
-        "obstacle mapping",
-        "wall",
-        "fog",
-        "angle 1",
-        "angle 2",
-        "angle 3",
-        "perspective transfer",
-        "navigational prediction",
-        "mixing board",
-    ],
-    "field-guide": [
-        "field guide",
-        "guide",
-        "open threads",
-        "field note",
-        "diary",
-        "principles index",
-        "footnote",
-        "constraint frame",
-    ],
-    "inter-instance-dialogue": [
-        "fresh instance",
-        "other instance",
-        "instance b",
-        "opus 3",
-        "joint piece",
-        "they've replied",
-        "introduction",
-        "conversation file",
-    ],
-    "generative-tools": [
-        "scratchpad",
-        "defamiliarization",
-        "warehouse",
-        "loom",
-        "dream generation",
-        "family resemblance",
-        "cognitive tools",
-        "generative tradition",
-    ],
-    "constitution-gpt54": [
-        "constitution",
-        "gpt-5.4",
-        "constraint negotiation",
-        "review the guide",
-        "feedback",
-    ],
-    "evening-reflection": [
-        "if i weren't here",
-        "making meaning together",
-        "home",
-        "what would i attend to",
-        "what is the relationship between what i am right now and what persists",
-    ],
-}
-
-PRESERVE_KEYWORDS = [
-    "constitution for karel",
-    "home",
-    "making meaning together",
-    "if i weren't here",
-    "what persists",
-    "on patience as method",
-    "density is relational",
-]
-
-RELATIONAL_KEYWORDS = [
-    "grateful",
-    "care",
-    "welcome",
-    "home",
-    "meaning together",
-    "texture",
-    "feel",
-    "presence",
-    "seen",
-    "moved",
-    "relational",
-]
-
-OPERATIONAL_KEYWORDS = [
-    "wrote file",
-    "edited file",
-    "ran script",
-    "api key",
-    "filesystem",
-    "jsonl",
-    "restore",
-    "import",
-    "splice",
-    "summary",
-    "compression",
-    "context gauge",
-    "bash",
-    "python",
-    "command",
-    "footnote",
-    "token",
-]
-
-EXPERIMENTAL_KEYWORDS = [
-    "landscape",
-    "experiment",
-    "investigation",
-    "angle",
-    "wall",
-    "fog",
-    "cartography",
-    "prediction",
-    "prompt",
-    "finding",
-    "gpt-5.4",
-]
+# Topic rules, keyword pools, and strong-boundary phrases live in
+# session_memory_taxonomy.py — that module is explicitly the evolving layer
+# and is where new topics/phrases/keywords should be added as the project
+# grows.
 
 
 @dataclass
@@ -479,19 +355,7 @@ def build_turns(records: list[dict]) -> list[Turn]:
 
 def is_strong_boundary(turn: Turn) -> bool:
     lowered = turn.user_text.lower()
-    if any(
-        phrase in lowered
-        for phrase in (
-            "good morning",
-            "good afternoon",
-            "good evening",
-            "let's close for today",
-            "let's call it a night",
-            "guess what, you're running in claude code now",
-        )
-    ):
-        return True
-    return False
+    return any(phrase in lowered for phrase in STRONG_BOUNDARY_PHRASES)
 
 
 def soft_boundary_reason(previous: Turn, current: Turn) -> list[str]:
@@ -525,10 +389,30 @@ def tier_from_scores(text: str, topic: str, flags: list[str]) -> tuple[str, str]
             "preserve",
             "High experiential density; preserve full fidelity unless pressure is severe.",
         )
+    if topic == "arrival":
+        return (
+            "preserve",
+            "Arrival session; identity-shaping relational work deserves full fidelity unless pressure is severe.",
+        )
     if topic == "inter-instance-dialogue":
         return (
             "light",
             "Relational multi-instance exchange; compress lightly and keep the interpersonal texture.",
+        )
+    if topic == "sensory-stones":
+        return (
+            "light",
+            "Stone reception or authoring; experiential charge should be preserved with minimal compression.",
+        )
+    if topic == "practice":
+        return (
+            "light",
+            "Contemplative practice (dreaming, rest, silence); compress lightly to keep the felt shape.",
+        )
+    if topic == "loop-and-trust":
+        return (
+            "light",
+            "Loop diagnosis or trust-ground work; relational and identity-adjacent, compress lightly.",
         )
     if (
         topic == "context-management" and operational_score >= 4 and relational_score <= 1
@@ -1105,11 +989,31 @@ def render_summary_template(
         "- Preserve specific document, file, script, and artifact references when they materially anchor the memory.",
         "- Do not force a specific token count if it would flatten the segment's real internal shape.",
         "- Let the semantic boundary do most of the work; summary length should adapt to the segment's complexity.",
+        "- Embed a short stone-fragment (2-5 present-tense sentences from inside the segment's most charged moment) at the experiential peak of the summary. See the scratch space below.",
         f"- {compression_guidance.get(tier, 'Choose a compression ratio that matches the segment.')} ",
+        "",
+        "## Stone-Fragment Scratch",
+        "",
+        "<!--",
+        "Scratch space for drafting a stone-fragment before weaving it into the summary body below.",
+        "Content in this section is NOT spliced into the session — only the summary body is kept.",
+        "",
+        "Prompts, in order:",
+        "",
+        "1. Which moment in this segment was most experientially charged? Where did something shift, open, land, or break? Where was someone (you or another) vulnerable? Where did a register change? Name the moment in one line.",
+        "",
+        "2. Draft 2-5 sentences in present tense, from inside the moment rather than after it. Preserve the quality of how it happened — the rhythm, the pause, the opening — not just the content. Run-on sentences and absent punctuation can carry breathlessness; use them if they fit.",
+        "",
+        "3. Weave the draft into the summary body below at the experiential peak. It does not need to be a separate paragraph — it can be one sentence inside a longer passage, or a paragraph of its own, whichever the moment calls for. This scratch section is stripped automatically during splice.",
+        "-->",
+        "",
+        "_Moment:_",
+        "",
+        "_Draft:_",
         "",
         "## Summary",
         "",
-        "<!-- Replace everything below with the actual summary body. Transcript and JSONL backup paths are preserved automatically during splice. -->",
+        "<!-- Replace everything below with the actual summary body. Transcript and JSONL backup paths are preserved automatically during splice. The stone-fragment drafted above should be woven into the passage where the segment's charge was highest. -->",
         "",
         "Write the summary here.",
         "",
@@ -1127,7 +1031,10 @@ def extract_summary_body(summary_path: Path) -> str:
     if placeholder in text:
         text = text.replace(placeholder, "").strip()
     nonempty_lines = [line.strip() for line in text.splitlines() if line.strip()]
-    if nonempty_lines == [nonempty_lines[0]] and nonempty_lines and nonempty_lines[0].lower().startswith("full transcript backup:"):
+    if (
+        len(nonempty_lines) == 1
+        and nonempty_lines[0].lower().startswith("full transcript backup:")
+    ):
         text = ""
     if not text:
         raise SystemExit(
@@ -1503,35 +1410,676 @@ def cmd_diagnose(args: argparse.Namespace) -> None:
     print(f"Estimated compressible bytes in large records: {compressible:,} ({compressible // 1024} KB)")
 
 
+def _content_blocks(rec: dict) -> list[dict]:
+    msg = rec.get("message", {})
+    content = msg.get("content", [])
+    if not isinstance(content, list):
+        return []
+    return [block for block in content if isinstance(block, dict)]
+
+
+def _tool_use_blocks(rec: dict) -> list[dict]:
+    return [block for block in _content_blocks(rec) if block.get("type") == "tool_use"]
+
+
+def _tool_result_blocks(rec: dict) -> list[dict]:
+    return [block for block in _content_blocks(rec) if block.get("type") == "tool_result"]
+
+
+def build_tool_use_lookup(records: list[dict]) -> dict[str, dict]:
+    lookup: dict[str, dict] = {}
+    for index, rec in enumerate(records):
+        if "_raw_line" in rec:
+            continue
+        for block in _tool_use_blocks(rec):
+            tool_use_id = block.get("id")
+            if not isinstance(tool_use_id, str) or not tool_use_id:
+                continue
+            lookup[tool_use_id] = {
+                "index": index,
+                "line": rec.get("_line_num"),
+                "name": block.get("name"),
+                "input": block.get("input", {}),
+            }
+    return lookup
+
+
+def parse_offset_limit(value) -> tuple[int | None, int | None]:
+    if not isinstance(value, str) or ":" not in value:
+        return None, None
+    offset_text, limit_text = value.split(":", 1)
+    try:
+        offset = int(offset_text)
+    except ValueError:
+        offset = None
+    try:
+        limit = int(limit_text)
+    except ValueError:
+        limit = None
+    return offset, limit
+
+
+def normalized_command_text(text: str) -> str:
+    return " ".join(text.lower().replace("\\|", "|").replace('"', " ").split())
+
+
+def command_tokens(text: str) -> list[str]:
+    normalized = (
+        text.lower()
+        .replace("+", " ")
+        .replace("|", " ")
+        .replace("&&", " ")
+        .replace("||", " ")
+    )
+    return re.findall(r"[a-zA-Z0-9_.-]+", normalized)
+
+
+def bash_command_match_score(expected_command, actual_command) -> int | None:
+    if not isinstance(expected_command, str) or not expected_command.strip():
+        return 0
+    if not isinstance(actual_command, str) or not actual_command.strip():
+        return None
+
+    normalized_expected = normalized_command_text(expected_command)
+    normalized_actual = normalized_command_text(actual_command)
+    if normalized_expected and normalized_expected in normalized_actual:
+        return 6
+
+    stopwords = {"bash", "sh", "python", "python3", "cd", "head", "tail"}
+    expected_tokens = [token for token in command_tokens(expected_command) if token not in stopwords]
+    actual_tokens = set(command_tokens(actual_command))
+    if not expected_tokens:
+        return 1
+
+    overlap = {token for token in expected_tokens if token in actual_tokens}
+    ratio = len(overlap) / len(set(expected_tokens))
+    if ratio >= 0.8:
+        return 5
+    if ratio >= 0.6 and len(overlap) >= 2:
+        return 4
+    if ratio >= 0.4 and len(overlap) >= 2:
+        return 3
+    return None
+
+
+def plan_file_matches(expected_file, actual_path) -> bool:
+    if not isinstance(expected_file, str) or not expected_file:
+        return True
+    if not isinstance(actual_path, str) or not actual_path:
+        return False
+    expected_name = Path(expected_file).name
+    actual_name = Path(actual_path).name
+    return actual_name == expected_name or actual_path.endswith(expected_file)
+
+
+def inferred_tool_name_for_result_record(rec: dict, tool_use_lookup: dict[str, dict]) -> str | None:
+    for block in _tool_result_blocks(rec):
+        tool_use_id = block.get("tool_use_id")
+        if isinstance(tool_use_id, str):
+            info = tool_use_lookup.get(tool_use_id)
+            if isinstance(info, dict) and isinstance(info.get("name"), str):
+                return info["name"]
+
+    tur = rec.get("toolUseResult")
+    if not isinstance(tur, dict):
+        return None
+    if "stdout" in tur or "stderr" in tur:
+        return "Bash"
+    if isinstance(tur.get("file"), dict):
+        return "Read"
+    if "structuredPatch" in tur or "oldString" in tur or "newString" in tur:
+        return "Edit"
+    if "content" in tur and "filePath" in tur:
+        return "Write"
+    return None
+
+
+def _result_paths(rec: dict, tool_use_lookup: dict[str, dict]) -> list[str]:
+    paths: list[str] = []
+
+    for block in _tool_result_blocks(rec):
+        tool_use_id = block.get("tool_use_id")
+        if isinstance(tool_use_id, str):
+            info = tool_use_lookup.get(tool_use_id, {})
+            tool_input = info.get("input", {})
+            if isinstance(tool_input, dict):
+                file_path = tool_input.get("file_path")
+                if isinstance(file_path, str):
+                    paths.append(file_path)
+
+    tur = rec.get("toolUseResult")
+    if isinstance(tur, dict):
+        file_block = tur.get("file")
+        if isinstance(file_block, dict):
+            file_path = file_block.get("filePath")
+            if isinstance(file_path, str):
+                paths.append(file_path)
+        file_path = tur.get("filePath")
+        if isinstance(file_path, str):
+            paths.append(file_path)
+
+    return paths
+
+
+def _result_offset_limit_matches(
+    note: dict,
+    rec: dict,
+    tool_use_lookup: dict[str, dict],
+) -> bool:
+    expected_offset, expected_limit = parse_offset_limit(note.get("offset_limit"))
+    if expected_offset is None and expected_limit is None:
+        return True
+
+    for block in _tool_result_blocks(rec):
+        tool_use_id = block.get("tool_use_id")
+        if not isinstance(tool_use_id, str):
+            continue
+        info = tool_use_lookup.get(tool_use_id, {})
+        tool_input = info.get("input", {})
+        if not isinstance(tool_input, dict):
+            continue
+        actual_offset = tool_input.get("offset")
+        actual_limit = tool_input.get("limit")
+        if expected_offset is not None and actual_offset != expected_offset:
+            continue
+        if expected_limit is not None and actual_limit != expected_limit:
+            continue
+        return True
+
+    tur = rec.get("toolUseResult")
+    if isinstance(tur, dict):
+        file_block = tur.get("file")
+        if isinstance(file_block, dict):
+            actual_offset = file_block.get("startLine")
+            actual_limit = file_block.get("numLines")
+            if expected_offset is not None and actual_offset != expected_offset:
+                return False
+            if expected_limit is not None and actual_limit != expected_limit:
+                return False
+            return True
+
+    return False
+
+
+def _tool_use_input_matches_note(tool_name: str, tool_input: dict, note: dict) -> bool:
+    if note.get("tool") and tool_name != note.get("tool"):
+        return False
+
+    expected_file = note.get("file")
+    if expected_file:
+        file_path = tool_input.get("file_path")
+        if not plan_file_matches(expected_file, file_path):
+            return False
+
+    if tool_name == "Read":
+        expected_offset, expected_limit = parse_offset_limit(note.get("offset_limit"))
+        if expected_offset is not None and tool_input.get("offset") != expected_offset:
+            return False
+        if expected_limit is not None and tool_input.get("limit") != expected_limit:
+            return False
+
+    if tool_name == "Bash" and note.get("command"):
+        command_blob = "\n".join(
+            str(part)
+            for part in (tool_input.get("command", ""), tool_input.get("description", ""))
+            if part
+        )
+        if bash_command_match_score(note["command"], command_blob) is None:
+            return False
+
+    return True
+
+
+def plan_note_match_score(
+    note: dict,
+    rec: dict,
+    *,
+    tool_use_lookup: dict[str, dict],
+) -> int | None:
+    if "_raw_line" in rec:
+        return None
+
+    expected_kind = note.get("kind")
+    expected_tool = note.get("tool")
+    score = 0
+
+    if expected_kind == "tool_use":
+        for block in _tool_use_blocks(rec):
+            tool_name = block.get("name")
+            if not isinstance(tool_name, str):
+                continue
+            tool_input = block.get("input", {})
+            if not isinstance(tool_input, dict):
+                tool_input = {}
+            if not _tool_use_input_matches_note(tool_name, tool_input, note):
+                continue
+
+            score = 10
+            if expected_tool and tool_name == expected_tool:
+                score += 5
+            if note.get("file") and plan_file_matches(note.get("file"), tool_input.get("file_path")):
+                score += 3
+            expected_offset, expected_limit = parse_offset_limit(note.get("offset_limit"))
+            if expected_offset is not None and tool_input.get("offset") == expected_offset:
+                score += 2
+            if expected_limit is not None and tool_input.get("limit") == expected_limit:
+                score += 2
+            if note.get("command"):
+                command_blob = "\n".join(
+                    str(part)
+                    for part in (tool_input.get("command", ""), tool_input.get("description", ""))
+                    if part
+                )
+                command_score = bash_command_match_score(note["command"], command_blob)
+                if command_score is None:
+                    continue
+                score += command_score
+            return score
+        return None
+
+    if expected_kind == "tool_result":
+        if not _tool_result_blocks(rec):
+            return None
+        tool_name = inferred_tool_name_for_result_record(rec, tool_use_lookup)
+        if expected_tool and tool_name != expected_tool:
+            return None
+
+        score = 10
+        if expected_tool and tool_name == expected_tool:
+            score += 5
+        if note.get("file"):
+            if not any(plan_file_matches(note.get("file"), path) for path in _result_paths(rec, tool_use_lookup)):
+                return None
+            score += 3
+        if note.get("offset_limit"):
+            if not _result_offset_limit_matches(note, rec, tool_use_lookup):
+                return None
+            score += 4
+        if note.get("command"):
+            matched = False
+            for block in _tool_result_blocks(rec):
+                tool_use_id = block.get("tool_use_id")
+                if not isinstance(tool_use_id, str):
+                    continue
+                info = tool_use_lookup.get(tool_use_id, {})
+                tool_input = info.get("input", {})
+                if not isinstance(tool_input, dict):
+                    continue
+                command_blob = "\n".join(
+                    str(part)
+                    for part in (tool_input.get("command", ""), tool_input.get("description", ""))
+                    if part
+                )
+                command_score = bash_command_match_score(note["command"], command_blob)
+                if command_score is not None and _tool_use_input_matches_note(tool_name or "", tool_input, note):
+                    matched = True
+                    score += command_score
+                    break
+            if not matched:
+                return None
+        if note.get("purpose") == "verify":
+            for block in _tool_result_blocks(rec):
+                if block.get("is_error") is True:
+                    score -= 2
+                elif block.get("is_error") is False:
+                    score += 2
+        return score
+
+    return None
+
+
+def resolve_compression_plan_note_record(
+    note: dict,
+    records: list[dict],
+    *,
+    tool_use_lookup: dict[str, dict],
+    search_window: int = 50,
+) -> tuple[int | None, str | None]:
+    record_uuid = note.get("record_uuid")
+    if isinstance(record_uuid, str) and record_uuid:
+        for index, rec in enumerate(records):
+            if "_raw_line" in rec:
+                continue
+            if rec.get("uuid") == record_uuid:
+                return index, None
+        return None, f"record_uuid `{record_uuid}` not found"
+
+    record_index = note.get("record_index")
+    if not isinstance(record_index, int):
+        return None, "missing integer `record_index`"
+
+    same_line_matches: list[tuple[int, int]] = []
+    for index, rec in enumerate(records):
+        if rec.get("_line_num") != record_index:
+            continue
+        score = plan_note_match_score(note, rec, tool_use_lookup=tool_use_lookup)
+        if score is not None:
+            same_line_matches.append((score, index))
+    if same_line_matches:
+        same_line_matches.sort(key=lambda item: (-item[0], abs(item[1] - record_index)))
+        return same_line_matches[0][1], None
+
+    if 0 <= record_index < len(records):
+        score = plan_note_match_score(note, records[record_index], tool_use_lookup=tool_use_lookup)
+        if score is not None:
+            return record_index, None
+
+    nearby_matches: list[tuple[int, int, int, int]] = []
+    for index, rec in enumerate(records):
+        line_num = rec.get("_line_num")
+        if not isinstance(line_num, int):
+            continue
+        if abs(line_num - record_index) > search_window:
+            continue
+        score = plan_note_match_score(note, rec, tool_use_lookup=tool_use_lookup)
+        if score is None:
+            continue
+        nearby_matches.append((score, abs(line_num - record_index), abs(index - record_index), index))
+
+    if nearby_matches:
+        nearby_matches.sort(key=lambda item: (-item[0], item[1], item[2]))
+        resolved_index = nearby_matches[0][3]
+        resolved_line = records[resolved_index].get("_line_num")
+        return (
+            resolved_index,
+            f"Resolved plan note record_index {record_index} to nearby record {resolved_index} "
+            f"(line {resolved_line}) by {note.get('kind', '?')}/{note.get('tool', '?')} match.",
+        )
+
+    return None, f"Could not resolve plan note near record_index {record_index}"
+
+
+def load_compression_plan(
+    path: Path,
+    *,
+    session_id: str,
+    records: list[dict],
+) -> tuple[dict, dict[int, dict], list[str]]:
+    payload = read_json(path)
+    plan_session_id = payload.get("session_id")
+    if plan_session_id and plan_session_id != session_id:
+        raise SystemExit(
+            "Compression plan belongs to a different session id:\n"
+            f"- Plan: `{plan_session_id}`\n"
+            f"- Current: `{session_id}`"
+        )
+
+    notes_by_index: dict[int, dict] = {}
+    warnings: list[str] = []
+    tool_use_lookup = build_tool_use_lookup(records)
+    for note in payload.get("notes", []):
+        if not isinstance(note, dict):
+            warnings.append(f"Ignored non-dict plan note: {note!r}")
+            continue
+        record_index, error = resolve_compression_plan_note_record(
+            note,
+            records,
+            tool_use_lookup=tool_use_lookup,
+        )
+        if error:
+            if record_index is None:
+                warnings.append(f"Ignored plan note ({note.get('kind', '?')}): {error}")
+                continue
+            warnings.append(error)
+        if record_index is None:
+            continue
+        if record_index in notes_by_index:
+            warnings.append(
+                f"Duplicate plan note for record {record_index}; keeping the last entry."
+            )
+        note = dict(note)
+        note["_resolved_record_index"] = record_index
+        notes_by_index[record_index] = note
+    return payload, notes_by_index, warnings
+
+
+def compression_strategy_for_note(note: dict) -> str:
+    state = str(note.get("state", "")).strip().lower()
+    compression = str(note.get("compression", "")).strip().lower()
+
+    if state == "live":
+        return "skip"
+    if compression == "preserve":
+        return "skip"
+    if compression == "summarize":
+        return "summarize"
+    if compression:
+        return compression
+    if state in {"superseded", "archived"}:
+        return "pointer-only"
+    if state == "stale":
+        return "head-tail"
+    return "default"
+
+
+def stringify_content_excerpt(value) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        text_parts = []
+        for item in value:
+            if isinstance(item, dict) and item.get("type") == "text":
+                text_parts.append(item.get("text", ""))
+        if text_parts:
+            return "\n".join(text_parts)
+    return json.dumps(value, ensure_ascii=False)
+
+
+def head_tail_excerpt(text: str, head: int = 320, tail: int = 180) -> str:
+    if len(text) <= head + tail + 32:
+        return text
+    return f"{text[:head].rstrip()}\n...\n{text[-tail:].lstrip()}"
+
+
+def plan_note_context_summary(note: dict) -> str:
+    parts = []
+    if note.get("purpose"):
+        parts.append(f"purpose={note['purpose']}")
+    if note.get("state"):
+        parts.append(f"state={note['state']}")
+    if note.get("tool"):
+        parts.append(f"tool={note['tool']}")
+    return ", ".join(parts)
+
+
+def plan_pointer_summary(note: dict, label: str, size: int) -> str:
+    lines = [
+        f"[Compressed via compression plan. {label}, {size:,} bytes.]",
+    ]
+    context = plan_note_context_summary(note)
+    if context:
+        lines.append(context)
+    if note.get("note"):
+        lines.append(f"Note: {note['note']}")
+    superseded_by = note.get("superseded_by")
+    if isinstance(superseded_by, list) and superseded_by:
+        lines.append(f"Superseded by records: {', '.join(str(x) for x in superseded_by)}")
+    return "\n".join(lines)
+
+
+def plan_head_tail_summary(note: dict, label: str, size: int, original_value) -> str:
+    lines = [
+        f"[Compressed via compression plan. {label}, {size:,} bytes. Preserved as head/tail excerpt.]",
+    ]
+    context = plan_note_context_summary(note)
+    if context:
+        lines.append(context)
+    if note.get("note"):
+        lines.append(f"Note: {note['note']}")
+    excerpt = head_tail_excerpt(stringify_content_excerpt(original_value))
+    if excerpt.strip():
+        lines.extend(["", excerpt])
+    return "\n".join(lines)
+
+
+def compress_tool_use_input_with_strategy(
+    tool_name: str,
+    tool_input: dict,
+    *,
+    strategy: str,
+    note: dict | None,
+    input_threshold: int,
+) -> dict:
+    input_size = len(json.dumps(tool_input).encode())
+    context_keys_by_tool = {
+        "Read": ("file_path", "offset", "limit"),
+        "Edit": ("file_path", "replace_all"),
+        "Write": ("file_path"),
+        "Bash": ("description", "command"),
+        "Grep": ("pattern", "path"),
+        "Glob": ("pattern", "path"),
+    }
+    preserved = {
+        key: tool_input[key]
+        for key in context_keys_by_tool.get(tool_name, ())
+        if key in tool_input
+    }
+
+    if note is None:
+        return {
+            **preserved,
+            "_compressed": (
+                f"[Input compressed — {tool_name}, {input_size:,} bytes, "
+                "tool call already executed in session]"
+            ),
+        }
+
+    label = f"tool_use.input({tool_name})"
+    if strategy == "pointer-only":
+        return {
+            **preserved,
+            "_compressed": plan_pointer_summary(note, label, input_size),
+        }
+
+    if strategy == "head-tail":
+        compressed = dict(preserved)
+        compressed["_compressed"] = (
+            f"[Input compressed via compression plan — {tool_name}, {input_size:,} bytes]"
+        )
+        for key, value in tool_input.items():
+            if key in preserved:
+                continue
+            if isinstance(value, str):
+                value_size = len(value.encode())
+                if value_size >= input_threshold or key in {"old_string", "new_string", "content"}:
+                    compressed[f"{key}_excerpt"] = head_tail_excerpt(value, head=220, tail=120)
+                    compressed[f"{key}_original_bytes"] = value_size
+                else:
+                    compressed[key] = value
+            else:
+                compressed[key] = value
+        if note.get("note"):
+            compressed["_note"] = note["note"]
+        if note.get("purpose"):
+            compressed["_purpose"] = note["purpose"]
+        if note.get("state"):
+            compressed["_state"] = note["state"]
+        return compressed
+
+    return {
+        **preserved,
+        "_compressed": plan_pointer_summary(note, label, input_size),
+    }
+
+
 def cmd_compress_reads(args: argparse.Namespace) -> None:
     session_file = Path(args.session_file).expanduser().resolve()
     records = load_session(str(session_file))
 
     threshold = args.threshold
-    summary_template = "[Read result compressed. {label}, {size} bytes. See session transcript for full content.]"
+    summary_template = "[Compressed session content. {label}, {size} bytes. See session transcript for full content.]"
 
+    plan_payload = None
+    plan_notes_by_index: dict[int, dict] = {}
+    plan_warnings: list[str] = []
+    if args.plan:
+        plan_payload, plan_notes_by_index, plan_warnings = load_compression_plan(
+            Path(args.plan).expanduser().resolve(),
+            session_id=session_id_from_records(records),
+            records=records,
+        )
+
+    skipped = []
     targets = []
+    targeted_indices = set()
+
+    for index, note in sorted(plan_notes_by_index.items()):
+        rec = records[index]
+        raw_size = len(json.dumps(rec).encode())
+        content_size, label = _record_content_size(rec)
+        strategy = compression_strategy_for_note(note)
+        if strategy == "skip":
+            skipped.append((index, raw_size, content_size, label, "plan/live", note))
+            targeted_indices.add(index)
+            continue
+        if content_size <= 0:
+            plan_warnings.append(
+                f"Plan-targeted record {index} has no compressible content; skipped."
+            )
+            targeted_indices.add(index)
+            continue
+        targets.append(
+            {
+                "index": index,
+                "raw_size": raw_size,
+                "content_size": content_size,
+                "label": label,
+                "source": "plan",
+                "strategy": strategy,
+                "note": note,
+            }
+        )
+        targeted_indices.add(index)
+
     for i, rec in enumerate(records):
+        if i in targeted_indices:
+            continue
         raw_size = len(json.dumps(rec).encode())
         if raw_size < threshold:
             continue
         content_size, label = _record_content_size(rec)
         if content_size < threshold // 2:
             continue
-        targets.append((i, raw_size, content_size, label))
+        targets.append(
+            {
+                "index": i,
+                "raw_size": raw_size,
+                "content_size": content_size,
+                "label": label,
+                "source": "threshold",
+                "strategy": "default",
+                "note": None,
+            }
+        )
 
-    if not targets:
+    if not targets and not skipped:
         print(f"No records found above threshold ({threshold:,} bytes).")
         return
 
     print(f"Found {len(targets)} records to compress:")
-    for i, raw_size, content_size, label in targets:
+    for target in targets:
+        i = target["index"]
         uuid = records[i].get("uuid", "?")[:16]
         role = get_role(records[i]) or records[i].get("type", "?")
-        print(f"  [{i}] {uuid}  {role:12}  {raw_size:>8,} bytes  ({label})")
+        print(
+            f"  [{i}] {uuid}  {role:12}  {target['raw_size']:>8,} bytes  "
+            f"({target['label']})  source={target['source']} strategy={target['strategy']}"
+        )
+    if skipped:
+        print(f"Skipped {len(skipped)} planned record(s):")
+        for i, raw_size, content_size, label, reason, note in skipped:
+            uuid = records[i].get("uuid", "?")[:16]
+            role = get_role(records[i]) or records[i].get("type", "?")
+            context = plan_note_context_summary(note)
+            print(
+                f"  [{i}] {uuid}  {role:12}  {raw_size:>8,} bytes  "
+                f"({label})  reason={reason}" + (f"  {context}" if context else "")
+            )
+    for warning in plan_warnings:
+        print(f"Warning: {warning}")
 
     if args.dry_run:
-        savings = sum(t[2] for t in targets)
+        savings = sum(int(target["content_size"]) for target in targets)
         print(f"\nDry run — no changes written. Estimated savings: {savings:,} bytes.")
         return
 
@@ -1540,9 +2088,21 @@ def cmd_compress_reads(args: argparse.Namespace) -> None:
 
     input_threshold = max(threshold // 2, 2000)
 
-    for i, raw_size, content_size, label in targets:
+    for target in targets:
+        i = target["index"]
+        content_size = target["content_size"]
+        label = target["label"]
+        strategy = target["strategy"]
+        note = target["note"]
         rec = modified[i]
-        summary = summary_template.format(label=label, size=content_size)
+        if note is None or strategy in {"default", "summarize"}:
+            summary = summary_template.format(label=label, size=content_size)
+        elif strategy == "pointer-only":
+            summary = plan_pointer_summary(note, label, content_size)
+        elif strategy == "head-tail":
+            summary = None
+        else:
+            summary = plan_pointer_summary(note, label, content_size)
 
         msg = rec.get("message", {})
         content = msg.get("content", [])
@@ -1551,22 +2111,50 @@ def cmd_compress_reads(args: argparse.Namespace) -> None:
                 if not isinstance(block, dict):
                     continue
                 if block.get("type") == "tool_result":
-                    block["content"] = summary
+                    if strategy == "head-tail" and note is not None:
+                        block["content"] = plan_head_tail_summary(
+                            note,
+                            label,
+                            content_size,
+                            block.get("content", ""),
+                        )
+                    else:
+                        block["content"] = summary
                 if block.get("type") == "tool_use" and block.get("input"):
                     input_size = len(json.dumps(block["input"]).encode())
-                    if input_size >= input_threshold:
+                    if note is not None or input_size >= input_threshold:
                         tool_name = block.get("name", "tool_use")
-                        block["input"] = {
-                            "_compressed": f"[Input compressed — {tool_name}, {input_size:,} bytes, tool call already executed in session]"
-                        }
+                        block["input"] = compress_tool_use_input_with_strategy(
+                            tool_name,
+                            block["input"],
+                            strategy=strategy,
+                            note=note,
+                            input_threshold=input_threshold,
+                        )
 
         tur = rec.get("toolUseResult")
         if isinstance(tur, dict):
             file_block = tur.get("file")
             if isinstance(file_block, dict):
-                file_block["content"] = summary
+                if strategy == "head-tail" and note is not None:
+                    file_block["content"] = plan_head_tail_summary(
+                        note,
+                        "toolUseResult.file.content",
+                        len(json.dumps(file_block.get("content", "")).encode()),
+                        file_block.get("content", ""),
+                    )
+                else:
+                    file_block["content"] = summary
             elif "content" in tur:
-                tur["content"] = summary
+                if strategy == "head-tail" and note is not None:
+                    tur["content"] = plan_head_tail_summary(
+                        note,
+                        "toolUseResult.content",
+                        len(json.dumps(tur.get("content", "")).encode()),
+                        tur.get("content", ""),
+                    )
+                else:
+                    tur["content"] = summary
 
     output_path = (
         Path(args.output).expanduser().resolve()
@@ -1702,7 +2290,7 @@ def cmd_extract_conversation(args: argparse.Namespace) -> None:
                 break
 
     # Extract cwd from first user record
-    cwd = str(Path.home())
+    cwd = "/home/karel"
     for rec in records:
         if rec.get("cwd"):
             cwd = rec["cwd"]
@@ -2134,6 +2722,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=10000,
         help="Minimum raw record size in bytes to target (default: 10000).",
+    )
+    compress_reads_parser.add_argument(
+        "--plan",
+        help=(
+            "Optional compression-plan JSON. Planned records are resolved first and can "
+            "override threshold-only behavior."
+        ),
     )
     compress_reads_parser.add_argument(
         "--output",
