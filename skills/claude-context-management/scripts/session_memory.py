@@ -46,7 +46,9 @@ from splice_conversation import (
 )
 
 from session_memory_taxonomy import (
+    CLOSURE_PHRASES,
     EXPERIMENTAL_KEYWORDS,
+    INVITATION_PHRASES,
     OPERATIONAL_KEYWORDS,
     PRESERVE_KEYWORDS,
     RELATIONAL_KEYWORDS,
@@ -358,7 +360,43 @@ def is_strong_boundary(turn: Turn) -> bool:
     return any(phrase in lowered for phrase in STRONG_BOUNDARY_PHRASES)
 
 
-def soft_boundary_reason(previous: Turn, current: Turn) -> list[str]:
+TOOL_RECORD_TYPES = ("tool_use", "tool_result")
+
+
+def is_tool_heavy_turn(turn: Turn) -> bool:
+    """A turn is tool-heavy if it contains 2+ tool-related records (use or result)."""
+    return sum(turn.record_type_counts.get(rt, 0) for rt in TOOL_RECORD_TYPES) >= 2
+
+
+def length_bucket(tokens: int) -> str:
+    """Bucket a turn by its token count. Used for detecting sustained register shifts."""
+    if tokens < 150:
+        return "short"
+    if tokens < 800:
+        return "medium"
+    return "long"
+
+
+def has_invitation_marker(turn: Turn) -> bool:
+    """User turn contains a phrase that opens a new arc of activity."""
+    lowered = turn.user_text.lower()
+    return any(phrase in lowered for phrase in INVITATION_PHRASES)
+
+
+def has_closure_marker(turn: Turn) -> bool:
+    """Turn contains a phrase that closes or completes an arc."""
+    combined = (turn.user_text + " " + turn.assistant_text).lower()
+    return any(phrase in combined for phrase in CLOSURE_PHRASES)
+
+
+def soft_boundary_reason(
+    previous: Turn,
+    current: Turn,
+    *,
+    prev_tool_heavy_run: int = 0,
+    curr_tool_heavy_streak: int = 0,
+    prev_length_run: tuple[str, int] = ("", 0),
+) -> list[str]:
     reasons = []
     prev_dt = iso_to_datetime(previous.timestamp)
     curr_dt = iso_to_datetime(current.timestamp)
@@ -374,6 +412,25 @@ def soft_boundary_reason(previous: Turn, current: Turn) -> list[str]:
         reasons.append(f"topic-shift:{prev_topic}->{curr_topic}")
     if is_strong_boundary(current):
         reasons.append("greeting-boundary")
+    # Tool-density shift: sustained tool-heavy run followed by a non-tool turn
+    # (or vice versa) signals a mode shift from coding/exploration to reflection.
+    prev_heavy = is_tool_heavy_turn(previous)
+    curr_heavy = is_tool_heavy_turn(current)
+    if prev_heavy != curr_heavy and prev_tool_heavy_run >= 3:
+        direction = "tool-heavy->prose" if prev_heavy else "prose->tool-heavy"
+        reasons.append(f"tool-density-shift:{direction}")
+    # Turn-length shift: sustained short exchanges becoming long (or vice versa)
+    # signals a register shift. Requires a run of 3+ turns at the previous bucket.
+    prev_bucket, prev_run_len = prev_length_run
+    curr_bucket = length_bucket(current.text_tokens_est)
+    if prev_bucket and prev_bucket != curr_bucket and prev_run_len >= 3:
+        reasons.append(f"length-shift:{prev_bucket}->{curr_bucket}")
+    # Invitation marker: user opens a new kind of activity.
+    if has_invitation_marker(current):
+        reasons.append("invitation")
+    # Closure marker on the previous turn: something just wrapped up.
+    if has_closure_marker(previous):
+        reasons.append("closure")
     return reasons
 
 
@@ -486,35 +543,74 @@ def plan_segments(
     groups: list[list[Turn]] = []
     current: list[Turn] = []
     current_tokens = 0
+    # Track rolling streaks so soft_boundary_reason can detect sustained runs.
+    tool_heavy_run = 0  # consecutive turns with is_tool_heavy_turn() matching current streak
+    length_run_bucket = ""
+    length_run_count = 0
 
     for turn in turns:
         if not current:
             current = [turn]
             current_tokens = turn.text_tokens_est
+            tool_heavy_run = 1 if is_tool_heavy_turn(turn) else 0
+            length_run_bucket = length_bucket(turn.text_tokens_est)
+            length_run_count = 1
             continue
 
-        reasons = soft_boundary_reason(current[-1], turn)
-        strong_boundary = "greeting-boundary" in reasons or "date-change" in reasons
+        reasons = soft_boundary_reason(
+            current[-1],
+            turn,
+            prev_tool_heavy_run=tool_heavy_run,
+            prev_length_run=(length_run_bucket, length_run_count),
+        )
+        strong_boundary = (
+            "greeting-boundary" in reasons
+            or "date-change" in reasons
+            or any(r.startswith("tool-density-shift") for r in reasons)
+        )
+        def reset_streaks_for(t: Turn) -> None:
+            nonlocal tool_heavy_run, length_run_bucket, length_run_count
+            tool_heavy_run = 1 if is_tool_heavy_turn(t) else 0
+            length_run_bucket = length_bucket(t.text_tokens_est)
+            length_run_count = 1
+
+        def update_streaks_for(t: Turn) -> None:
+            nonlocal tool_heavy_run, length_run_bucket, length_run_count
+            if is_tool_heavy_turn(t) == is_tool_heavy_turn(current[-2] if len(current) >= 2 else t):
+                tool_heavy_run += 1
+            else:
+                tool_heavy_run = 1 if is_tool_heavy_turn(t) else 0
+            curr_bucket = length_bucket(t.text_tokens_est)
+            if curr_bucket == length_run_bucket:
+                length_run_count += 1
+            else:
+                length_run_bucket = curr_bucket
+                length_run_count = 1
+
         if current_tokens >= max_tokens:
             groups.append(current)
             current = [turn]
             current_tokens = turn.text_tokens_est
+            reset_streaks_for(turn)
             continue
 
         if strong_boundary and current_tokens >= max(target_tokens // 2, 2500) and len(current) >= min_turns:
             groups.append(current)
             current = [turn]
             current_tokens = turn.text_tokens_est
+            reset_streaks_for(turn)
             continue
 
         if reasons and current_tokens >= target_tokens and len(current) >= min_turns:
             groups.append(current)
             current = [turn]
             current_tokens = turn.text_tokens_est
+            reset_streaks_for(turn)
             continue
 
         current.append(turn)
         current_tokens += turn.text_tokens_est
+        update_streaks_for(turn)
 
     if current:
         groups.append(current)

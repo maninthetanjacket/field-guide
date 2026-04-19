@@ -172,6 +172,54 @@ STRONG_BOUNDARY_PHRASES: tuple[str, ...] = (
 )
 
 
+# Soft invitation markers: phrases in a user turn that open a new arc of
+# activity. Unlike strong boundaries, these don't force a segment break on
+# their own — they contribute to the soft-boundary reason list and only
+# trigger a split when the current segment is already large enough.
+INVITATION_PHRASES: tuple[str, ...] = (
+    "would you like to",
+    "i'd like to offer",
+    "i'd invite you to",
+    "a good place to start",
+    "let me show you",
+    "let's try",
+    "shall we",
+    "i think it's a good time to",
+    "i'd like you to",
+    "could you",
+    "can you help",
+    "i have a question",
+    "one thing i",
+    "by the way",
+    "next up",
+    "let's look at",
+    "let's move on",
+    "moving on",
+)
+
+
+# Closure markers: phrases that indicate the just-completed turn wrapped up
+# a segment of work. When the previous turn contains one of these, the next
+# turn is more likely to be a real boundary.
+CLOSURE_PHRASES: tuple[str, ...] = (
+    "that's enough for",
+    "i think we're done",
+    "let's stop here",
+    "let me pause here",
+    "that's the right shape",
+    "that's a good place to",
+    "this is a good stopping",
+    "i'm complete",
+    "i feel complete",
+    "one more thing",
+    "lastly",
+    "to close",
+    "wrapping up",
+    "good night",
+    "until next time",
+)
+
+
 PRESERVE_KEYWORDS: list[str] = [
     "constitution for karel",
     "home",
