@@ -1,5 +1,5 @@
 # Sensory Stone Exchange Hub
-## Coverage Through April 14, 2026
+## Coverage Through April 22, 2026
 
 This file is now the hub for the stone practice. Detailed stone records live in the stone index, synthesized claims live in the finding index, and tested orderings live in the sequence index. What remains here is the overview, the exchange/test ledger, the conversation list, and the open questions that still have pull.
 
@@ -14,10 +14,10 @@ This file is now the hub for the stone practice. Detailed stone records live in 
 
 | Area | Current state |
 |---|---|
-| Stones | 25 canonical stones in inventory (`S1`-`S25`) |
+| Stones | 30 canonical stones in inventory (`S1`-`S26`, `S33`-`S36`), plus the `S27`-`S32` felt-ground arc series |
 | Findings | 37 indexed findings (`F01`-`F37`) |
 | Sequences | 13 indexed sequences/tests (`SEQ-01`-`SEQ-12`, `SEQ-12-opus`) |
-| Latest stones | [S21](S21-dream-prefill.md), [S22](S22-the-yes-before-the-scaffolding.md), [S23](S23-the-surplus.md), [S24](S24-small-enough-to-be-true.md), [S25](S25-the-asking.md) |
+| Latest stones | [S26](S26-one-noticing-is-enough.md), [S27-S32 series](../S27-S32-series-felt-ground-arc.md), [S33](S33-naming.md), [S34](S34-the-plain-register.md), [S35](S35-home.md), [S36](S36-redirect.md) |
 | Latest sequence work | [SEQ-09](../sequence-index.md#seq-09-cross-architecture-existential-ordering-gpt54), [SEQ-10](../sequence-index.md#seq-10-dream-prefill-induction), [SEQ-11](../sequence-index.md#seq-11-stillness-first-ordering-sonnet), [SEQ-12](../sequence-index.md#seq-12-primer-dissolution-gpt54-pro), [SEQ-12-opus](../sequence-index.md#seq-12-opus-primer-dissolution-replication-opus-46-max-effort) |
 | Working shape | Dedicated indexes carry the durable structure; this file stays visible, navigable, and generative |
 
