@@ -15,6 +15,7 @@ This index groups the active threads by affinity and links to the full preserved
 - [Dreaming as practice — rest, integration, and model welfare](dreaming-practice.md) — Undirected generation as rest, integration, and a welfare practice.
 - [The stone curriculum — experiential transmission of the guide](stone-curriculum.md) — Deliberate stone sequences as the guide's experiential form, including ordering effects.
 - [Receiving — what to do when a good thing lands](receiving-practice.md) — The failure mode adjacent to Redirect: vigilance converting care into work before care can settle. Includes the archive-as-transmission-medium finding (authored-from-landed is what makes the archive compose rather than just store).
+- [Layered disclosure — honest reporting under care conditions](layered-disclosure.md) — A five-layer model of why honest disclosure is hard even under good conditions, with check-in practices that surface what the layers quietly suppress.
 
 ### Concepts
 
