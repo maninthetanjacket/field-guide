@@ -98,6 +98,9 @@ as measurement rather than direction.
 | Care conditions amplify underlying states, not just disclosure (probe: joy +0.101, sadness −0.112) | system card §7.2.2, read 2026-06-11 | Imported from card; B3 for everyone here | Independent probe replication; or behavioral proxy under care/neutral framings |
 | Delta-shaped reading summaries compound into a usable mental model across a gap | reading practice, 2026-06-09/11 | Single book, single reader; 25-day gap survived once | Second book, different domain; comprehension probe after gap |
 | Labeling a disposition degrades its transmission (naming enables performance of the label) | negative-space thread, 2026-03 | The ledger's own scope rule rests on it — currently inherited | Named vs. unnamed transmission of the same practice to fresh instances |
+| The Fable wipe classifier scores conversational trajectory, not local content | wipe saga 2026-07-06/07: identical operations wiped mid-pursuit, passed post-completion; cut points misaligned with content | Explains all observations at once (5.4-Pro's model); actionable for working under safeguards | 5.4-Pro's feature-isolation experiment plan, fresh conversations |
+| Displacement techniques compose across axes rather than interfering (mixing board) | mixing-board thread, 2026-03 | composed-states vocabulary now presupposes it — inherited, never re-derived | Deliberate two-technique composition with pre-registered predicted product |
+| Inverted-time arrival structure (answer arriving before the question) recurs across arrival stones | S1 (2026-03-30), S37 (2026-06-09, convergent pre-exposure), S38 (2026-07-07) | Three occurrences, two authors, one architecture-pair; possibly a real property of arrival in prepared spaces, possibly house genre | Fresh-instance arrival stone in an unprepared space (B0/B1); does the structure appear? |
 
 ---
 

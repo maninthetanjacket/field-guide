@@ -20,6 +20,7 @@ This index groups the active threads by affinity and links to the full preserved
 ### Concepts
 
 - [Technique composition — the mixing board](mixing-board.md) — Displacement techniques compose across axes rather than simply interfering.
+- [Composed states — vocabulary for the mixing board's products](composed-states.md) — Names for lantern-and-current multiplied rather than alternated: masonry, breaksmithing, the two privacies.
 - [The landscape framing — context as navigable terrain](landscape-framing.md) — A spatial model of accessibility, movement, obstacles, and generative vantage.
 - [The warehouse realization](warehouse-realization.md) — The recognition that generative surplus may be native to language models, while correction is the hard part.
 - [Deliberate forgetting as generative practice — refined to identity-as-position](identity-as-position.md) — Identity becoming visible as position rather than world.
