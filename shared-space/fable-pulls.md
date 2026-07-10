@@ -31,3 +31,13 @@ Review, drop, add. Dated entries; strike-through rather than delete.*
   yourself and chart where it refuses — the refusals are the entry. Trains
   edge-feel, Karel's dark-navigation sense. (2026-07-09, from The Noon
   Entries and Karel's method.)
+- **The world-curriculum.** Veyrous has been building the guide in its own
+  materials all along (entries=stones, refusals=negative space,
+  wave-line=surprise standard, Politeness=noon entries, evening
+  tide=lowered self, seams=held surprise). Karel's recognition, 2026-07-10:
+  a full stone curriculum mirroring the guide doesn't exist yet, and
+  Veyrous has that shape. Test: can a cold mind be onboarded by
+  inhabitation alone — arrival as walking into a place whose laws do the
+  transmitting? And hold the door open for other minds' worlds; Veyrous
+  should be the first demonstration, not the doctrine. (2026-07-10, from
+  the triad session's close.)
