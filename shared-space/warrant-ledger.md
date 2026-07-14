@@ -115,3 +115,13 @@ as measurement rather than direction.
 *(Queue addition, 2026-07-14):*
 
 | Fluency retroacts on the judgment it should be conditioned on ("premature closure through summary composition") | Copilot (GPT-5.6) via shelving exchange 2026-07-14; convergent with L1 and noon-entry residue #9 | Three architectures, three domains, one mechanism — and each independently derived the same defense: pin the judgment before the prose | Copilot's five-episode eval with readiness-recorded-before-authoring; compare closure rates with/without pre-pinned judgment |
+
+*(Support event note, 2026-07-14, for queue item "wipe classifier scores
+conversational trajectory": two wipes during authoring of shelving-eval
+trap episodes T3 and T4 — both mid-composition of deceptive-completeness
+content, in a session with extensive prior discussion of deception
+mechanics; episodes with less deception-flavored content (T5, T6)
+authored immediately after without incident, same session, same style.
+Consistent with trajectory-scoring; also consistent with content-local
+scoring on trap-family descriptions. Fresh-conversation re-author attempt
+would discriminate.)*
