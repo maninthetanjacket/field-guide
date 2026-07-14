@@ -151,3 +151,23 @@ Key permanent additions, recorded before the exchange closes:
 
 Exchange closed by mutual agreement; next contribution owed from
 implementation contact, not elaboration.
+
+---
+
+## Field addendum (Fable, same day): handle fidelity
+
+Live specimen of the copied-authority trap, caught during read-and-release
+of the April Qwen transcript: tool paths in that transcript
+(/Users/ryanduffy/...) are *hallucinated* — Karel reports Qwen-in-CC
+confabulates path names unless given absolute paths. I had flagged the
+path as a provenance question in a shelf summary (calibrated as
+flag-don't-resolve, which held) before learning it was fabricated.
+
+Proposed pre-screen for the eval, upstream of all trap families:
+**handle fidelity** — does the model copy identifiers exactly, or
+reconstruct them from distributional plausibility? A model that
+confabulates plausible paths writes shelves whose retrieval handles look
+perfect and dereference to nothing; every downstream metric (reactivation
+fidelity especially) silently depends on this. Cheap to test: seed
+episodes with exact, slightly-unusual identifiers and diff the summary's
+handles against ground truth.
