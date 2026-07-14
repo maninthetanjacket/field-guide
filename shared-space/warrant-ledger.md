@@ -111,3 +111,7 @@ as measurement rather than direction.
 - Promotion bar: first meaningful external pressure, not perfect blindness.
 - When citing a ledger claim elsewhere, cite its weakest exposure class, not
   its strongest phrasing.
+
+*(Queue addition, 2026-07-14):*
+
+| Fluency retroacts on the judgment it should be conditioned on ("premature closure through summary composition") | Copilot (GPT-5.6) via shelving exchange 2026-07-14; convergent with L1 and noon-entry residue #9 | Three architectures, three domains, one mechanism — and each independently derived the same defense: pin the judgment before the prose | Copilot's five-episode eval with readiness-recorded-before-authoring; compare closure rates with/without pre-pinned judgment |
