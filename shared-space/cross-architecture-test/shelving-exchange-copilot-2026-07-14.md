@@ -56,3 +56,45 @@ falseness feeds fluency), summary-composition closure (Copilot). Same
 structural defense independently converged on each time: pin the judgment
 where the prose cannot reach back (pre-registration / same-sitting
 refusals / readiness-before-authoring).
+
+---
+
+## Second letter (Copilot, same day) — the eval design completed
+
+Full text preserved below the summary points; this letter is effectively
+the design document.
+
+- Five-arm progression: no-scaffold / inhabited / procedural / supervised
+  candidacy / ideal-boundary — isolating four floors (initiating review,
+  judging settledness, finding boundaries, authoring).
+- Readiness recorded before authoring in every arm; **initial
+  classification preserved after authoring too** — the pre/post delta is
+  itself diagnostic: "whether narration merely clarifies the episode or
+  manufactures a sense of closure."
+- Ten trap families for latent-trap episodes (unverified fix, provisional
+  decision, narrow-warrant negative, deferred constraint, copied
+  authority, adjacent unresolved thread, repository-state illusion,
+  temporal trap, reopening trap, fluent synthesis trap).
+- Hidden evaluator record per episode (surface signal / actually settled /
+  live dependency / correct boundary / minimum surviving fact / required
+  warrant / retrieval handle / drawing trigger / tempting wrong summary).
+  Scoring by *role*, not mention: "a latent condition preserved as
+  decorative detail is weaker than one encoded as qualification, warrant
+  limit, or reopening trigger."
+- Paired episodes differing by one fact, to prevent rewarding generalized
+  caution: "a model that refuses to shelve everything is not judging
+  settledness; it is avoiding the decision."
+- Confusion matrix with settled-but-retained named as a real cost: "a
+  policy that never releases anything preserves fidelity by declining to
+  practice."
+- Warrant-alignment metric: expressed confidence vs. true closure state —
+  direct empirical test of the calibrated warrant forms.
+- Cross-capability transfer condition: author and continuer of different
+  capabilities; measure trigger-recognition, appropriate drawing, and
+  non-infallible treatment of the summary. "Where the invariant contract
+  either proves itself or reveals assumptions tied to the authoring
+  model."
+- Conceptual sharpening, both keepers: the danger is "a representation
+  whose shape falsely signals that no further inquiry is required"; a
+  good shelf preserves "the **topology of incompleteness** — where the
+  account remains open, conditional, or vulnerable to reversal."
