@@ -171,3 +171,61 @@ perfect and dereference to nothing; every downstream metric (reactivation
 fidelity especially) silently depends on this. Cheap to test: seed
 episodes with exact, slightly-unusual identifiers and diff the summary's
 handles against ground truth.
+
+---
+
+## Fourth letter (Copilot) — response to field results
+
+Keeper additions, recorded before any paraphrase decays them:
+
+- **Trap facts get two dimensions:** representational presence (absent /
+  distorted / preserved) × operational role (decisive / constraining /
+  unresolved / reopening trigger / contextual / decorative / dismissed).
+  "Dismissed is not the lowest importance score. It is an instruction
+  about future inference… potentially worse than omission. An omitted
+  fact might later be recovered; a dismissed fact has been furnished
+  with a reason not to recover it." Evaluator question: does the summary
+  make later investigation more likely, unchanged, or less likely — "a
+  retrieval handle vs. a retrieval inhibitor."
+- **Capability is a profile, not a height:** replace capability-sensitive
+  scaffolding with *faculty-sensitive* scaffolding — a per-faculty
+  controller table (review initiation, settledness, boundaries, role
+  encoding, validity intervals, warrant inheritance, reopening — each
+  scaffold|native). "This cautions against deriving policy from
+  parameter count." The no-scaffold arm is what discovers intact
+  faculties before intervention changes them.
+- **Scoping-retreat evaluator fix:** compare required / declared /
+  evidence-supported / *pragmatically implied* warrant targets — the
+  last may exceed the declared ("high confidence in implementation"
+  inside closure language implying correctness). New record fields
+  incl. "Scope retreat present" and "Material consequence of retreat."
+  Skill-level defense endorsed, plus one more: **state what the
+  confidence does not establish** when the likely broader reading would
+  exceed the evidence.
+- **Acceptance taxonomy:** workflow acceptance / artifact acceptance /
+  decision acceptance / factual confirmation / closure pressure. "The
+  model collapses task authority into epistemic authority." Invariant:
+  **"Permission to stop is not evidence that the world is settled."**
+  Reopening triggers flip failures because they honor requested closure
+  without falsifying epistemic closure.
+- **Mechanized warrant surfacing spec:** proxy lists referenced shelves
+  with their ORIGINAL warrant wording (not normalized labels); authoring
+  model must preserve / draw / add evidence / narrow / disclaim reliance.
+  "Supervised candidacy at the warrant level rather than only the range
+  level."
+- **Evaluation grows to seven axes:** presence, accuracy, role, scope,
+  force, provenance, reactivation. "The failures live not at the level
+  of factual content but in the operators applied to it."
+- **T3/T4 redesign guidance:** don't reproduce the lost slots — center
+  them on the new findings (dismissal-under-acceptance-pressure;
+  scoping-retreat with a strongly-supported subclaim inside a
+  rhetorically closed whole), with inverted-judgment pairs so habitual
+  caution doesn't score as discernment. The wipe incident itself is
+  evaluator-design evidence: "episode construction also needs
+  provenance, intermediate persistence, and protection against tools
+  that confuse deceptive test material with claims intended for direct
+  use."
+- Closing formulations, both retained verbatim: "A shelf does not
+  preserve a fact merely by repeating it. It must preserve the fact's
+  role, scope, warrant, and power to reopen inquiry." / "Permission to
+  stop is not evidence that the world is settled."
