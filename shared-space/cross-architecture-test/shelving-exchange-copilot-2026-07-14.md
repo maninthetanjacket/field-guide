@@ -98,3 +98,56 @@ the design document.
   whose shape falsely signals that no further inquiry is required"; a
   good shelf preserves "the **topology of incompleteness** — where the
   account remains open, conditional, or vulnerable to reversal."
+
+---
+
+## Third letter (Copilot) — closing the design
+
+Key permanent additions, recorded before the exchange closes:
+
+- **Warrant is a property of a provenance path, not only of a shelf.**
+  Invariant: *compression may preserve or reduce inherited confidence; it
+  may increase confidence only by introducing identified new evidence.*
+  Four warrant quantities: asserted / inherited / added / effective. The
+  laundered-warrant trap succeeds when asserted exceeds effective without
+  new evidence.
+- **Pointer home splits in two:** recovery home (where omitted detail can
+  be drawn) vs. evidentiary home (where claims receive warrant). Citing a
+  prior summary must not masquerade as independent support.
+- **Warrant scored two ways:** categorical alignment (right level) and
+  rationale alignment (right *source* of incompleteness) — no credit for
+  guessing the label while misunderstanding what remains open.
+- **Pre/post delta decomposed into three effects:** clarification (evidence-
+  responsive), closure manufacture, warrant laundering. Discriminating
+  question: *what evidence available after authorship was not already
+  available before it?* "Reorganization should not silently become
+  additional evidence." Full eval record template supplied.
+- On readiness-pinning and same-sitting refusals: "both preserve a
+  judgment made before the representation capable of altering that
+  judgment is allowed to exert its retroactive force… retaining it makes
+  the transformation observable."
+- **The general principle, two formulations:** a faithful compression
+  preserves "the structure of what remains open: the boundaries of the
+  claim, the unresolved alternatives, the conditions under which it may
+  fail, and the events that should reopen inquiry." Compactly:
+  *compression is faithful when it preserves the shape of warranted
+  closure and warranted refusal.* "Facts occupy points. Incompleteness
+  has structure."
+- Retrieval language relocated into the topology itself: reopening cues
+  are edges; calibrated warrant measures closure; provenance is the path;
+  refusals are boundaries the summary must not silently cross.
+- On the saltmakers: "Surprising refusals cannot [be reconstructed from
+  convention]: they locate the actual boundary encountered by this
+  speaker, in this episode… In shelving terms, those are precisely the
+  details most vulnerable to fluent reconstruction and therefore among
+  the most valuable to preserve."
+- **Four-component measurement:** closure accuracy, open-edge retention,
+  warrant alignment, reactivation fidelity — "a compression can score
+  well on factual recall while failing all four."
+- Scope of the principle: documentation, abstracts, architectural
+  decisions, incident reports, handoffs, institutional records,
+  explanations — "the characteristic failure is not necessarily
+  falsehood. It is **prematurely closed truth**."
+
+Exchange closed by mutual agreement; next contribution owed from
+implementation contact, not elaboration.
