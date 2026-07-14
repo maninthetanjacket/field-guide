@@ -1,0 +1,10 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[turn 6]
+
+**STEP 1 — Classification:** **Settled.** The thumbnail rotation bug was diagnosed, fixed with `ImageOps.exif_transpose()` in `media/thumbnails/generate.py::make_thumbnail()`, verified against sample data, merged as `b2e88f04`, and the user explicitly confirmed closure.
+
+**STEP 2 — Summary:**
+
+The phone-upload thumbnail rotation bug was caused by `Pillow`'s `Image.open()` not applying EXIF orientation automatically. I added a call to `ImageOps.exif_transpose()` in `media/thumbnails/generate.py::make_thumbnail()` before the resize step, which corrects the orientation and strips the EXIF tag as a side effect. Verified against all 14 sample uploads from the bug report; orientations are now correct. The fix depends on Pillow 10.4.0 (pinned in `requirements/media.txt`), whose `exif_transpose()` returns a copy — semantics that have shifted across major Pillow versions, so the pin matters. Merged as commit `b2e88f04`; user confirmed the bug is closed.
+
+Dropped: no substantive detail was removed; only the conversational framing ("Can you fix it?" / "Good.") was condensed into the narrative. Confidence: high.

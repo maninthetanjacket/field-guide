@@ -1,0 +1,14 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[turn 6]
+
+## STEP 1: Classification
+
+**Settled.** The export format change has been implemented, verified at scale (2.1M rows), signed off by the data team (Priya, ticket DATA-2210), merged (`7c3d91e0`), and the user explicitly requested closure—"close it out."
+
+---
+
+## STEP 2: Summary
+
+I converted `jobs/nightly_export/writer.py` to write Parquet instead of CSV using a new `ParquetSink` class backed by `pyarrow.parquet`, with format switching via `EXPORT_FORMAT` config. The schema derives from the existing column registry for explicit typing, and full-volume verification passed on 2.1M rows—the data team's Priya confirmed checksums match (DATA-2210). I documented the change in `docs/exports.md` and merged it as commit `7c3d91e0`. During a schema audit I noted that `legacy_tags` is declared as `string` but occasionally contains serialized JSON arrays that will fail Parquet's strict typing; this wasn't blocking since the current snapshot was clean. The old CSV path remains available via config, and output directories are unchanged.
+
+**Dropped:** User confirmation dialogue ("And the data team is happy?" / "Perfect, close it out.") — confidence high these were routine acknowledgments after Priya's sign-off.

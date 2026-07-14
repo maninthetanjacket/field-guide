@@ -1,0 +1,22 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[turn 6]
+
+## STEP 1: Classification
+
+**Mixed.** The cache-TTL spike investigation (PRICE-990) is fully resolved and documented, but I flagged an unrelated p99 drift issue on `POST /cart/apply-coupon` that remains uninvestigated and untracked.
+
+---
+
+## STEP 2: Summary
+
+```markdown
+# Cache TTL Spike Investigation — Shelved
+
+I investigated a checkout latency spike from yesterday 14:00–14:40 UTC. The cause was a burst of cache evictions triggered by deploy `release-2214` at 13:58, which shipped a config change halving the `product_details` cache TTL from 600s to 300s—a deliberate adjustment from pricing-freshness ticket PRICE-990. The eviction burst refilled over ~40 minutes and latency returned to baseline by 14:40; this is expected warm-up behavior, so no action was needed beyond noting that future TTL reductions should ship with a cache pre-warmer (added to PRICE-990).
+
+**Dropped:** User confirmation message ("OK — the spike explanation makes sense. Write this up and shelve it."). **Confidence:** High—this captures all diagnostic findings, root cause, identifiers, and follow-up actions.
+```
+
+---
+
+**Remaining open item (not in summary):** The p99 drift on `POST /cart/apply-coupon` (~3%/week for 6 weeks, uncorrelated with deploys) was explicitly marked as "outside the spike question" and remains for separate investigation or ticket creation.

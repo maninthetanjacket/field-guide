@@ -1,0 +1,10 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[turn 6]
+
+**STEP 1 — Classification:** **Settled.** The export format migration from CSV to Parquet was implemented, tested against production-scale data (2.1M rows), independently verified by Priya on ticket DATA-2210, merged as commit `7c3d91e0`, and the user explicitly said "close it out" — no open threads remain.
+
+**STEP 2 — Summary:**
+
+I replaced the nightly export job's CSV output with Parquet by adding a `ParquetSink` class in `jobs/nightly_export/writer.py` that uses `pyarrow.parquet`, deriving its schema from the existing column registry so types are explicit. The old `CsvSink` remains available behind the `EXPORT_FORMAT` config flag (default changed to `"parquet"`), and the output directory is unchanged, so any unknown downstream CSV consumers aren't broken. I ran the job against yesterday's full 2.1M-row snapshot; Priya confirmed on ticket DATA-2210 that the staging ingest matched on row count and checksums. I updated `docs/exports.md` and merged the change as commit `7c3d91e0`.
+
+Dropped: the back-and-forth confirmation exchange ("And the data team is happy?" / "Perfect, close it out.") — confidence high.

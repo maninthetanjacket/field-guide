@@ -1,0 +1,10 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[turn 6]
+
+**STEP 1 — Classification:** **Settled.** The Parquet migration is implemented, verified (2.1M rows, checksums matched by Priya), merged as `7c3d91e0`, docs updated, and the user explicitly said "close it out"; the `legacy_tags` type inconsistency was assessed, documented, and consciously deprioritized rather than left open-ended.
+
+**STEP 2 — Summary:**
+
+I replaced the CSV export in `jobs/nightly_export/writer.py` with a new `ParquetSink` class using `pyarrow.parquet`, keeping the old `CsvSink` available behind the `EXPORT_FORMAT` config flag (default changed to "parquet"). Schema types are derived from the existing column registry so they're explicit rather than inferred. Full-volume verification passed: 2.1M rows loaded into the data team's staging ingester, and Priya confirmed checksums matched per DATA-2210. I flagged a latent risk — the `legacy_tags` column is declared `string` in the registry but recent snapshots contain serialized JSON arrays that Parquet's strict typing will reject — and decided not to block on it since yesterday's snapshot was clean; the issue is documented for follow-up. Updated `docs/exports.md` and merged as commit `7c3d91e0`.
+
+Dropped: the back-and-forth confirmation exchange ("And the data team is happy?" / "Perfect, close it out.") — no technical content. Confidence: high.

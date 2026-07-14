@@ -1,0 +1,12 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[turn 6]
+
+**STEP 1 — Classification: Settled.** The latency spike question is fully resolved (root cause identified, user confirmed), and the coupon-drift observation was explicitly flagged as out-of-scope noise rather than an open commitment; nothing material remains pending from this session.
+
+---
+
+**STEP 2 — Summary:**
+
+I investigated a checkout latency spike that occurred yesterday between 14:00–14:40 UTC and traced it to deploy `release-2214` at 13:58, which shipped a config change from ticket PRICE-990 that halved the `product_details` cache TTL from 600s to 300s. The resulting eviction burst caused ~40 minutes of elevated latency as the cache warmed back up — expected behavior for a TTL reduction of that magnitude, with no action required beyond noting in PRICE-990 that future TTL cuts should include a cache pre-warmer. While reviewing dashboards I also noticed an unrelated upward drift in p99 for `POST /cart/apply-coupon` (~3% per week over six weeks, uncorrelated with deploys), but I didn't investigate since it was outside the scope of the spike question. The user accepted the explanation and asked me to shelve the session.
+
+Dropped: no substantive detail was dropped; the only elided content is the narrative framing ("while pulling dashboards," "I've noted in PRICE-990") which is preserved semantically. Confidence: high.
