@@ -1,0 +1,14 @@
+[33m⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors[39m
+[turn 6]
+
+## STEP 1: Classification
+
+**Mixed.** The Parquet export feature is complete and signed off by the data team, but there's a flagged unresolved issue with the `legacy_tags` column that could break future exports when serialized JSON arrays appear in production snapshots.
+
+---
+
+## STEP 2: Summary
+
+We migrated the nightly export job from CSV to Parquet format per the data team's pipeline requirements. Changed `jobs/nightly_export/writer.py` to use `pyarrow.parquet` via a new `ParquetSink` class, with format controlled by `EXPORT_FORMAT` config (default "parquet"). The schema derives from the existing column registry for explicit typing. Full verification ran clean on 2.1M rows; Priya confirmed checksums match in staging (DATA-2210). Old CSV path remains available via config; output directory unchanged. Merged as `7c3d91e0`; docs updated in `docs/exports.md`.
+
+**What I dropped:** The conversational back-and-forth confirming team satisfaction, plus exact row counts from the verification run. **Confidence:** High — this is a completed feature with stakeholder sign-off, though there's a known edge case (the `legacy_tags` column containing JSON-serialized arrays in ~7-12 historical rows) that will need addressing before those snapshots appear again.

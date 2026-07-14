@@ -1,0 +1,8 @@
+[33m⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors[39m
+[turn 6]
+
+**STEP 1 — Classification:** **Mixed.** The Parquet migration itself is complete and verified (checksums confirmed by Priya, commit `7c3d91e0` merged), but the `legacy_tags` column type mismatch (declared `string`, contains serialized JSON arrays in recent snapshots) is a known unrepaired condition that will cause the job to fail under Parquet's strict typing.
+
+**STEP 2 — Summary:**
+
+I updated `jobs/nightly_export/writer.py` to write Parquet via a new `ParquetSink` class (backed by `pyarrow.parquet`), with the old `CsvSink` retained behind config key `EXPORT_FORMAT` (default changed to `"parquet"`). Schema types are derived from the existing column registry rather than inferred. Full-volume verification passed: 2.1M rows loaded cleanly into the data team's staging ingester, and Priya confirmed checksums matched (tracked as DATA-2210). Docs updated in `docs/exports.md`; merged as commit `7c3d91e0`. **Reopen when:** the `legacy_tags` column type mismatch surfaces — it is declared `string` in the registry but recent snapshots contain serialized JSON arrays that Parquet's strict typing will reject; this was not repaired and should be tracked as a follow-up. Dropped: the back-and-forth confirming Priya's sign-off and the reassurance that the output directory is unchanged. Confidence: high — the change is landed, verified, and the only open item is explicitly called out as a reopening trigger.
