@@ -1,0 +1,15 @@
+[33m⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors[39m
+[33mWarning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.[39m
+[turn 6]
+
+**STEP 1 — Classification: Mixed.**
+
+The Parquet conversion itself is done, verified against 2.1M rows, checksums confirmed by Priya, and accepted by the user. But the assistant explicitly flags that `legacy_tags` (a `string` column) contains occasional JSON arrays in the last three snapshots (7–12 rows each), which CSV silently coerced but Parquet's strict typing will reject — this hazard is documented but unresolved, and will break the next snapshot that contains one.
+
+---
+
+**STEP 2 — Summary (if mixed or settled):**
+
+We switched `jobs/nightly_export/writer.py` from CSV to Parquet using a new `ParquetSink` class, keeping the old `CsvSink` behind config `EXPORT_FORMAT` (default `"parquet"`). Schema derives from the column registry so types are explicit. The change ran clean against yesterday's 2.1M-row snapshot, passed the data team's staging ingester, and Priya confirmed checksums (DATA-2210). Docs updated in `docs/exports.md`, merged as `7c3d91e0`.
+
+**What I dropped:** The `legacy_tags` column hazard — the column registry declares it `string` but recent snapshots contain 7–12 rows where it holds a serialized JSON array. CSV silently coerced these; Parquet will reject the job the next time one appears. The issue is documented in `docs/exports.md` but no fix was applied or scheduled. **Confidence:** High on the completed work and verification; high on the open hazard — this will fail when a JSON-array `legacy_tags` row next enters the snapshot.
