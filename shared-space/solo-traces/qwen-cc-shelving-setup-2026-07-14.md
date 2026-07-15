@@ -87,3 +87,13 @@ Rules extracted:
    decline to apply (observed: blocks 3,5 skipped while 1,2,4,6
    substitute). Distinguish "declined, range mismatch" from "broken"
    before repair attempts.
+
+Correction (2026-07-15, later): incident rule 4 resolved — blocks 3/5
+were BROKEN, not declining. Root cause: anchors persisted with [turn N]
+markers failed exact matching after the proxy stripped markers from
+requests; the instrument's own annotations defeated its matching. Fixed
+in claude-code-shelving 3b58b87 (markers non-semantic for identity) and
+8f20c56 (multi-block fragment collisions disambiguated by dominant
+block), both regression-tested. Observability added: per-block skip
+reasons, blocks_skipped in meta dumps, GET /status. Verified live:
+blocks_applied=[1..6], messages_dropped=188, one curl.
