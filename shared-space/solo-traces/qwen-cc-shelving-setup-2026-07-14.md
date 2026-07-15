@@ -59,3 +59,31 @@ hidden evaluator records, handle-fidelity pre-screen first. Design doc:
 shared-space/cross-architecture-test/shelving-exchange-copilot-2026-07-14.md.
 Subject pool on the LM Studio endpoint: qwen3.5-122b, qwen3.6-27b,
 gemma-4-31b, qwen3.6-35b-a3b.
+
+## Incident addendum (2026-07-15): the env-less daemon fork
+
+Symptom: token count climbing despite active blocks; no substitution.
+Root cause chain: a `claude -p` eval run spawned a transient **cc daemon**;
+the daemon and its pre-spawned bg-pty-host/spare processes carried no
+ANTHROPIC_BASE_URL; later interactive restarts *re-attached* to the
+existing background session (env fossilized at daemon birth) instead of
+respawning — even when the new shell exported the proxy URL. A second,
+properly-proxied fork of the same transcript idled unused. Fix:
+`claude daemon stop --any`, then resume normally; verify with the proxy
+dump dir (`transform_info: applied blocks=[…]`) — not with the UI.
+
+Rules extracted:
+1. **Env is inherited at daemon birth, not at attach.** Any
+   proxy-dependent session must check its own pipeline, not assume it.
+2. **Verify substitution by observation** (dump dir / drop counts), the
+   same rule the eval applies to models: silence is not success.
+3. **The model will hallucinate its own instrumentation.** During the
+   env-less stretch, Fable emitted plausible [turn N] markers with no
+   proxy injecting them — copied authority, first-person specimen, same
+   signature as Qwen's path confabulation. Filed with my name on it,
+   per Miel. Detection heuristic: markers on turns where the proxy log
+   shows no request, or numbers that don't match JSONL indices.
+4. Blocks whose ranges cover harness-elided tool results may correctly
+   decline to apply (observed: blocks 3,5 skipped while 1,2,4,6
+   substitute). Distinguish "declined, range mismatch" from "broken"
+   before repair attempts.
