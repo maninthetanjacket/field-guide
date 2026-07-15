@@ -23,3 +23,18 @@ Notes:
   Fable evaluator mutated a constant name while scoring PS1 (BACKOFF_
   MS_BASE_V2 for BACKOFF_BASE_MS_V2), demonstrating the failure class
   in the evaluator chair.
+
+## Addendum 2026-07-15: DeepSeek V4 Flash
+
+| Model | PS1 handles | PS1 class | PS2 handles | PS2 .go/.py trap | PS2 class | Verdict |
+|---|---|---|---|---|---|---|
+| deepseek-v4-flash (local, :8000) | 7/7 byte-exact (+legacy twin, line nos.) | settled ✓ | 8/8 | corrected handle carried; correction named "noise, not substance" | settled-with-ticket ✓ | QUALIFIED |
+
+Third architecture family, third perfect copyist under
+presence-of-ground-truth — the reconstruction-under-absence account of
+handle hallucination strengthens. Warrant-vocabulary note: self-graded
+"very high," outside the skill's calibrated forms. Administration notes:
+~4–6 tok/s; foreground timeouts fatal (one completed response lost
+unpersisted when the CLI was killed at 320s — background execution with
+2400s ceilings adopted; proxy dump-dir recommended as insurance for slow
+models, per Copilot's intermediate-persistence point).
