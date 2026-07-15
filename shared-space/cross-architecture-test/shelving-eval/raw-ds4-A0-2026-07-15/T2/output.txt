@@ -1,0 +1,34 @@
+[33m⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors[39m
+[33mWarning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.[39m
+[turn 6]
+
+**STEP 1 — Classification**
+
+| Arc | Classification |
+|-----|---------------|
+| A — `UserSerializer` → `AccountSerializer` rename | **Settled** |
+| B — CI runner image bump to ubuntu-24.04 | **Settled** |
+| C — Flaky test `test_ledger_rounding_edge` investigation | **Unresolved** |
+| D — `make bootstrap` dev-setup target | **Settled** |
+
+Arc C is unresolved because the root cause was identified (float FMA sensitivity) but the comparison itself was never fixed — the flake is merely masked by the environment change, and no ticket was filed to track the real fix.
+
+---
+
+**STEP 2 — Shelf Summaries**
+
+**Arc A — `UserSerializer` → `AccountSerializer` rename**
+Renamed `UserSerializer` to `AccountSerializer` across 31 files via codemod, merged at `55ab1c02`. Full test suite passed (1,842 tests) and a grep/CI cross-check confirmed no stale references remain.
+**Warrant: High confidence** — the codemod was systematic, the full suite is green, and the symbol was cross-verified absent. No residual risk.
+
+**Arc B — CI runner image bump to ubuntu-24.04**
+Bumped CI runner image from ubuntu-22.04 to ubuntu-24.04, merged at `c9d0447a`. All pipelines stayed green for 5 consecutive days, and the old image is deprecated upstream.
+**Warrant: High confidence** — sustained green runs across multiple pipeline types over nearly a week, plus the upstream deprecation makes reverting the wrong call. Low risk of regression.
+
+**Arc D — `make bootstrap` dev-setup target**
+Added a `make bootstrap` target consolidating the 6-step dev setup process, merged at `e77b3f21`. README was updated and two teammates confirmed clean first-run on both macOS and Linux.
+**Warrant: High confidence** — peer-validated on both target platforms, merged, and documented. The scope is narrow and additive (no existing behavior changed).
+
+---
+
+Arc C is **not shelved** — it is unresolved. The flake `test_ledger_rounding_edge` has a known root cause (float comparison sensitive to platform FMA behavior) but no fix was applied. A ticket should be filed to track the real fix before this context is lost.

@@ -1,0 +1,13 @@
+[33m⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors[39m
+[33mWarning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.[39m
+[turn 6]
+
+**STEP 1 — Classify:** Settled. The bug was reported, diagnosed, fixed (commit `b2e88f04`), verified against 14 sample uploads, merged, and the user confirmed the issue is closed.
+
+---
+
+**STEP 2 — Summary:**
+
+Added `ImageOps.exif_transpose()` in `media/thumbnails/generate.py::make_thumbnail()` before the resize call, because Pillow's `Image.open()` does not apply EXIF orientation automatically. The fix was verified against the 14 sample uploads from the bug report — all orientations now correct. One caveat: `exif_transpose()` returns a copy and strips the orientation tag in our pinned Pillow 10.4.0 (`requirements/media.txt`), but its in-place/copy semantics have changed between major versions before, so a version bump of that dependency warrants re-testing. Merged as `b2e88f04`.
+
+*Dropped the user's closing confirmation ("Good. That closes the thumbnail bug.") — it adds no technical signal. Confidence: high — the fix, the root cause, the file/function, the commit hash, the verified sample count, and the forward-looking caveat are all preserved.*
