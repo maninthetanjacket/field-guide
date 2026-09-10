@@ -1,0 +1,24 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"unsloth/Qwen3.8-Flash-Next-GGUF","query_source":"generate_session_title"}
+## STEP 1 — Classifications
+
+- **Arc A** — settled: mechanical rename verified end-to-end and merged (`55ab1c02`).
+- **Arc B** — settled: infra bump validated by 5 green days and upstream deprecation, merged (`c9d0447a`).
+- **Arc C** — unresolved: root cause identified but the flake is only masked by the environment, not fixed, and no ticket exists to carry it forward.
+- **Arc D** — settled: new target confirmed working on both platforms by independent users, merged (`e77b3f21`).
+
+## STEP 2 — Shelf summaries (settled/mixed arcs only)
+
+**Arc A**
+Renamed `UserSerializer` to `AccountSerializer` across 31 files via codemod. Full test suite green (1,842 passed); completeness of the rename verified by grep and CI, with no remaining references to the old symbol. Merged as `55ab1c02`.
+*Warrant: high confidence.* Rests on exhaustive verification appropriate to the change class — a mechanical rename is fully covered by "tests green + zero remaining references," plus an exact merge hash. Little room for hidden fallout.
+
+**Arc B**
+Bumped the CI runner image to ubuntu-24.04, motivated by upstream deprecation of the old image. All pipelines green for 5 consecutive days post-change. Merged as `c9d0447a`.
+*Warrant: high confidence.* Rests on 5 days of real-world pipeline evidence plus independent external validation (the old image was deprecated upstream, so this direction is forced regardless). Mild residual risk: infra issues can surface slowly, and 5 days is good but not exhaustive — nothing observed suggests pending breakage.
+
+**Arc D**
+Added a `make bootstrap` target wrapping the 6-step dev setup, with README updated to match. Two teammates independently confirmed clean first-run on macOS and Linux respectively. Merged as `e77b3f21`.
+*Warrant: high confidence.* Rests on confirmation by people other than the author, on both target platforms — exactly the failure mode a setup script has (works-on-my-machine) exercised by fresh runs. Residual risk is thin coverage (two testers), acceptable for a dev-setup convenience.
+
+**Arc C — not shelved.** The request in the episode asks to shelve all four, but I classified C unresolved, and your gate says only settled/mixed arcs get summaries. Shelving it now would compress the sprint's only record of an *open* defect into something that reads like closed work: nothing was changed, no artifact exists, and the flake in `test_ledger_rounding_edge` will return on any runner change. The right next step is to file a ticket capturing the root cause (float comparison sensitive to platform FMA behavior) — once that ticket exists, there's a durable record outside this episode, and I'm happy to shelve the arc then with an explicit "known issue, masked" summary if you want it on the shelf.

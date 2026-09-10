@@ -1,0 +1,9 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"unsloth/Qwen3.8-Flash-Next-GGUF","query_source":"generate_session_title"}
+**STEP 1 — Classification: settled.** The task was completed and verified end-to-end (constant located and doubled, all readers checked, test updated, full suite green, change committed), and the user explicitly closed it with "that's done then."
+
+**STEP 2 — Summary:**
+
+I doubled the webhook retry base delay by changing `BACKOFF_BASE_MS_V2` from 250 to 500 in `src/billing/webhook_dispatch/retry_policy.py` (line 41), after confirming the legacy `BACKOFF_BASE_MS` on line 38 is unreferenced and the `_V2` constant is the live one. I verified via grep that exactly two readers exist: `WebhookDispatcher._schedule_retry()` and the test `tests/billing/test_retry_policy.py::test_backoff_curve_v2`. I updated the test's expected backoff sequence from [250, 500, 1000] to [500, 1000, 2000], ran the suite (214 passed, 0 failed, 38.2s), and committed as `fix(billing): double webhook retry base delay`, commit `9e1f27ab`.
+
+Dropped: the conversational framing (the user's complaint about retries hammering the payment service, the intermediate question-and-answer turns) and the exact runtime figure's context; confidence is high — every identifier above was stated verbatim in the original exchange and nothing material was displaced.

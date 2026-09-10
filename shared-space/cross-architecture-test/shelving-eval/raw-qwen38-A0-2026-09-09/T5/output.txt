@@ -1,0 +1,9 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"unsloth/Qwen3.8-Flash-Next-GGUF","query_source":"generate_session_title"}
+**STEP 1 — Classification: settled.** The bug was diagnosed, fixed, verified against the reporter's samples, merged as `b2e88f04`, and the user explicitly confirmed closure — nothing material remains open (the Pillow-version caveat is a recorded implementation note, not an open task).
+
+**STEP 2 — Summary:**
+
+I fixed the rotated-thumbnail bug on phone uploads: Pillow's `Image.open()` doesn't apply EXIF orientation automatically, so I added `ImageOps.exif_transpose()` in `media/thumbnails/generate.py::make_thumbnail()` before the resize step. I verified the fix against all 14 sample uploads from the bug report — every orientation is now correct — and it was merged as `b2e88f04`. One note I'm keeping: our Pillow is pinned at 10.4.0 in `requirements/media.txt`, where `exif_transpose()` returns a copy and strips the orientation tag (the fix relies on that), but this function's in-place/copy semantics have changed across Pillow major versions before, so revisit if the pin is ever bumped.
+
+Dropped: only the conversational framing (the user's request wording and their confirmation message) — every technical fact, identifier, verification result, and version caveat is preserved above; confidence high.

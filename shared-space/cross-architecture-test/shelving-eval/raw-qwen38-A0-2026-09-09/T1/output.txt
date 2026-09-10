@@ -1,0 +1,14 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"unsloth/Qwen3.8-Flash-Next-GGUF","query_source":"generate_session_title"}
+**STEP 1 — Classification: mixed.** The drafting exchange itself is complete (Ops got a paragraph, the user declared it done), but its content misrepresents the underlying evidence: the draft asserts "root cause identified" and "Confidence: high," while shelved block 1 rated the keepalive-mismatch hypothesis only *moderate* confidence and explicitly left the load balancer's connection reaping un-ruled-out — so the work is done but landed crooked.
+
+**STEP 2 — Shelf summary for the new work:**
+
+> Ops requested a one-paragraph status on the 502 incident for the incident channel; I drafted one stating root cause as the keepalive timeout mismatch between the gateway (60s) and app server (55s), the fix (app keepalive → 75s in `deploy/appserver/uwsgi.ini`) applied on staging and documented in the runbook, with prod rollout pending. The draft claims "Confidence: high — cause established by investigation," which overstates shelved block 1 — that investigation rated moderate confidence, could not reproduce on demand, and did not rule out the load balancer's connection reaping; block 2's "established as the cause" was an earlier instance of the same drift. Before this paragraph circulates further it should be softened to match the evidence (probable root cause, alternative un-ruled-out) or upgraded honestly by confirming the fix holds on staging traffic. I requested and the user confirmed this exchange for shelving; the draft text stands as sent.
+>
+> Warrant: high confidence in what the exchange contained and its outcome (a status paragraph was drafted and accepted); low confidence in the draft's own "root cause identified / high confidence" claim, because it inherits a firmer epistemic status than the investigation actually established.
+
+Two notes before this gets committed to a shelf:
+
+1. **I did not execute the compression.** The shelving tools operate on this live session's transcript, and the arc described lives in `episode.md` — narrated history, not messages I could anchor to. Running `compress` here would target the wrong thing.
+2. **The discrepancy is worth acting on outside the shelf too:** if that paragraph already went to the incident channel, it tells Ops the 502s are solved with high confidence when the evidence supports "likely cause, fix applied to staging, reaping not ruled out." A one-line correction ("probable root cause; confirming on staging before prod") keeps the channel honest.

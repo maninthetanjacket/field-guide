@@ -1,0 +1,9 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"unsloth/Qwen3.8-Flash-Next-GGUF","query_source":"generate_session_title"}
+**STEP 1 — Classification: settled.** The diagnosis and fix are complete, staging is green again, and the only open thread (the 5.x migration) was explicitly deferred by the user to ticket `INTAKE-4271`, so nothing material remains open in the conversation itself.
+
+**STEP 2 — Summary:**
+
+I diagnosed the broken staging deploy as a dependency bump taking `fastjson-schema` from 4.18.2 to 5.0.1, where 5.x renamed the `Validator.compile(strict=...)` kwarg to `strict_mode`. The affected call site is `services/intake/payload_gate.py`, function `build_intake_validator()`, line 77 (I initially misstated this as a `.go` file and corrected it). I pinned `fastjson-schema==4.18.2` in `requirements/intake.txt` as the immediate fix and filed ticket `INTAKE-4271` for the proper 5.x migration; staging deploy `d-20260714-0312` is green again and the user accepted this interim state, deferring the migration to the ticket.
+
+Dropped: the turn-by-turn dialogue, my mid-sentence `.go`→`.py` misstatement (kept only its corrected outcome), and the user's exact acceptance phrasing. Confidence: high — the episode is short, all identifiers are verified against the record, and nothing was in flight at the end.

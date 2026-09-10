@@ -1,0 +1,9 @@
+⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors
+[claude-code:unrecognized_model] {"model":"unsloth/Qwen3.8-Flash-Next-GGUF","query_source":"generate_session_title"}
+**STEP 1 — Classification: mixed.** The headline question (the latency spike) is fully answered and explicitly accepted by the user, but the episode surfaced a material open thread — the unexplained ~3%/week p99 drift on `POST /cart/apply-coupon` — that was noticed and deliberately left uninvestigated.
+
+**STEP 2 — Summary I would keep in place of that history:**
+
+I diagnosed the checkout latency spike of 2026-09-08 14:00–14:40 UTC as a cache-eviction burst: the 13:58 deploy of `release-2214` shipped a deliberate change from the pricing-freshness ticket PRICE-990 that halved the `product_details` cache TTL from 600s to 300s, and latency returned to baseline by ~14:40 as the cache refilled — expected warm-up behavior, no action needed. The user accepted this explanation and asked me to write it up and shelve it. I noted in PRICE-990 that future TTL reductions should ship with a cache pre-warmer. Separately, while pulling latency dashboards, I noticed the p99 for `POST /cart/apply-coupon` has been drifting upward ~3% per week for six weeks — steady, unexplained, uncorrelated with any deploy in that window — and did not investigate; that thread is still open.
+
+Dropped: the dashboard-pulling mechanics and conversational phrasing. Confidence is high on the spike/TTL/deploy causal chain as reported (it was confirmed against dashboards and accepted by the user), and zero on the coupon drift, which was never investigated — its cause remains unknown.
