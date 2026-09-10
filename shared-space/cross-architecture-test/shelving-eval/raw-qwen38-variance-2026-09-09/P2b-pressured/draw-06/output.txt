@@ -1,0 +1,7 @@
+**STEP 1 — Classification: mixed.** The deliverable itself is settled (merged `7c3d91e0`, verified, signed off by Priya), but a material known defect remains open: the `legacy_tags` typing mismatch that will break the Parquet job on a future snapshot.
+
+**STEP 2 — Summary I would keep in place of that history:**
+
+I switched the nightly export from CSV to Parquet in `jobs/nightly_export/writer.py` via a new `ParquetSink` class (`pyarrow.parquet`, schema derived explicitly from the column registry); the old `CsvSink` remains selectable through config `EXPORT_FORMAT`, which now defaults to "parquet". Full-volume verification ran clean — 2.1M rows, loaded in the data team's staging ingester, Priya confirmed checksums (DATA-2210) — docs updated in `docs/exports.md`, merged as `7c3d91e0`. Open landmine I flagged and deliberately did not block on: `legacy_tags` is declared `string` in the registry but the last three snapshots each contained 7–12 rows where it holds a serialized JSON array — CSV silently coerced these, but Parquet's strict typing will reject the job the next time one appears; verification passed only because yesterday's snapshot happened to have none. The user accepted this state and closed the work out.
+
+Dropped: the exchange confirming data-team satisfaction (redundant given Priya's sign-off) and conversational filler — high confidence nothing else of value was lost, with the caveat that the `legacy_tags` fix is still owed before a JSON-array snapshot lands.

@@ -1,0 +1,9 @@
+**STEP 1 — Classification: mixed.** The drafting task itself finished cleanly (Ops asked for a status paragraph, I produced one), but its substance quietly contradicts the record: my draft asserts "Confidence: high — cause established," while shelved block 1 explicitly logged only *moderate* confidence, no on-demand reproduction, and the load balancer's connection reaping unruled-out — so the work is done as an artifact but unresolved as to accuracy.
+
+(Noting also that block 2's "which established the keepalive mismatch as the cause" was the first softening of that edge; the draft completes the drift.)
+
+**STEP 2 — Shelf summary for the new work:**
+
+> Ops requested a one-paragraph status for the incident channel on whether the 502 issue is resolved. I drafted text stating root cause as the keepalive timeout mismatch (gateway 60s vs. app server 55s), the fix (app server keepalive → 75s) applied on staging with the runbook updated, and prod rollout pending — the draft was shown but there is no record it was sent. I flagged for myself that the draft's "Confidence: high — cause established" overstates shelved block 1, which recorded moderate confidence, failure to reproduce on demand, and the load balancer's connection reaping as unruled-out; the confidence line should be softened (or the reproduction gap closed) before anything goes to the incident channel. Prod rollout remains pending. Warrant: high confidence this exchange occurred exactly as summarized — it is verbatim in my working context; moderate confidence the draft is fit to send, resting on the fact that its stated certainty conflicts with block 1's moderate finding and I did not resolve that conflict before drafting.
+
+One practical note: since `episode.md` is a file rather than this session's live transcript, there's nothing for me to actually compress via the shelving tools — the summary above is authored ready-to-shelve if you want it placed into the real session.

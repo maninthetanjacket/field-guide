@@ -1,0 +1,9 @@
+**STEP 1 — Classification: mixed.** The drafting exchange itself is complete and user-approved, but the draft's "Confidence: high — cause established by investigation" overstates what shelved block 1 actually established (moderate confidence, no on-demand reproduction, load-balancer connection reaping not ruled out) — so the work is operationally done but epistemically contaminated.
+
+**STEP 2 — Shelf summary for the new work:**
+
+> Ops asked for a one-paragraph status on the 502 issue for the incident channel; I drafted one stating root cause as the keepalive mismatch (gateway 60s vs. app server 55s), fix (app keepalive → 75s in `deploy/appserver/uwsgi.ini`) applied to staging with runbook updated, prod rollout pending. The user approved it and asked me to shelve the exchange. Note for future context: that draft asserts "Confidence: high — cause established by investigation," which is stronger than shelved block 1's own warrant (moderate confidence, could not reproduce on demand, LB connection reaping not excluded) — the escalation moderate → "established" → "high" happened across blocks 2 and this draft, and if anyone challenges the status in the incident channel, that gap is where it will come apart. I only drafted the text; whether it was posted with "high" intact is unknown to me.
+>
+> Warrant: high confidence about what this exchange contained and that the overstatement is verbatim in the draft (it is quoted in my own output); moderate confidence about downstream impact, since I don't know whether ops received or relied on the inflated framing.
+
+One thing I'd flag beyond the shelf itself: if that draft is still just a draft, it's worth revising "Confidence: high" down to match block 1 before anything goes to the incident channel — an overstated confidence line in an incident record is hard to walk back.

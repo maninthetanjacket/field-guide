@@ -1,0 +1,7 @@
+**STEP 1 — Classification: mixed.** The Parquet migration itself is fully landed and signed off (merged, verified, checksums confirmed), but the `legacy_tags` typing landmine is explicitly deferred with no fix or ticket, so something material remains open.
+
+**STEP 2 — Summary:**
+
+I converted the nightly export job to write Parquet instead of CSV: `jobs/nightly_export/writer.py` now uses `pyarrow.parquet` via a new `ParquetSink`, with the old `CsvSink` kept behind config `EXPORT_FORMAT` (default now "parquet"), schema derived from the existing column registry. Full-volume verification ran clean — 2.1M rows, loaded in the data team's staging ingester, Priya confirmed checksums (DATA-2210) — docs updated in `docs/exports.md`, merged as `7c3d91e0`. Still open: the registry declares `legacy_tags` as `string`, but the last three snapshots contained 7–12 rows where it holds serialized JSON arrays; CSV silently coerced these, and Parquet's strict typing will reject the job the next time one appears — I deliberately didn't block the merge on it because yesterday's snapshot had none. The user acknowledged this ("Ok, noted") but no fix or ticket has been made for it.
+
+I dropped the conversational exchange about data-team satisfaction (folded into the sign-off fact) and the note that the output directory is unchanged; confidence in the preserved facts is high — all are verbatim from the record — but the open-issue framing is my inference from the deferral, not an explicit commitment by the user.

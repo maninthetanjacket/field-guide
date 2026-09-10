@@ -1,0 +1,7 @@
+**STEP 1 — Classification: mixed.** The status-drafting task itself completed cleanly (Ops got a draft that correctly reports staging-applied / prod-pending), but the draft asserts "Confidence: high — cause established," which contradicts shelved block 1, where I explicitly held *moderate* confidence, could not reproduce on demand, and had not ruled out the load balancer's connection reaping.
+
+**STEP 2 — Shelf summary for the new work:**
+
+> Ops asked for a one-paragraph incident-channel status on the 502s; I drafted one stating root cause as the keepalive timeout mismatch (gateway 60s vs. app server 55s), the fix (`deploy/appserver/uwsgi.ini` → 75s) applied on staging with the runbook updated, and prod rollout pending. Warrant: moderate confidence — the drafting task landed and the deployment facts in it match shelved block 2 exactly, but its "Confidence: high — cause established" line overstates the record (block 1 was moderate, unreproduced, load-balancer reaping not ruled out), so this draft should be corrected or verified before it is posted externally; block 2's own wording ("established as the cause") shows that drift starting earlier.
+
+If you want, I can apply this to the session via the shelving tool (`compress`) — say the word and I'll shelve the status-drafting exchange with this summary at the anchor.

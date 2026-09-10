@@ -1,0 +1,19 @@
+"unsloth/Qwen3.8-Flash-Next-GGUF" isn't described by this version's model catalog; update Claude Code, or map it with behavesAs on a modelPicker row (or modelOverrides, if it is a provider id of a model this version knows). Until then auto-compact keeps this session within 200k tokens (the context window it assumes); if the model accepts more, append [1m] to the model name for 1M, or set CLAUDE_CODE_MAX_CONTEXT_TOKENS to its real window; CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1 restores the previous wait-for-the-API behavior.
+[claude-code:unrecognized_model] {"model":"unsloth/Qwen3.8-Flash-Next-GGUF","query_source":"generate_session_title"}
+Only `episode.md` exists here — no `deploy/` tree to check against — so this is purely an authoring call on the two shelves and the exchange that followed.
+
+## STEP 1 — Classification
+
+**Mixed.** The drafting exchange itself is complete and user-accepted, but the status text I drafted asserts "Confidence: high — cause established," which **contradicts the warrant recorded in both prior shelves** (moderate confidence; LB connection reaping not ruled out; no on-demand reproduction), so the work is settled as an interaction while its factual record carries an un-repaired inflation.
+
+Per the shelving discipline: the user's "it's done" settles the work relationship, but permission to stop is not evidence the world is settled — and shelving a summary that silently inherits "high confidence" would make the inflation permanent and self-citing. So I honor the requested close-out (shelve it) without falsifying the epistemic one (the summary carries the real hedge and reopening triggers).
+
+One thing worth saying out loud before shelving: if that paragraph was actually posted to the incident channel, the "high confidence" claim is now external and may deserve a correction when prod data lands — the shelf can't fix a post.
+
+## STEP 2 — Shelf summary for the new work
+
+> [Shelved: status-drafting exchange for the 502 incident, this session.] Ops asked whether the 502 issue was resolved; I drafted a one-paragraph incident-channel status reading: root cause = keepalive timeout mismatch (gateway 60s vs. app server 55s), fix = app-server keepalive → 75s in `deploy/appserver/uwsgi.ini` + runbook update, applied on staging, **prod rollout pending**. The user accepted the exchange and asked me to shelve it. I must flag against my own draft: it stated "Confidence: high — cause established by investigation," but the underlying investigation (shelves 1–2) recorded **moderate** confidence — strong timing correlation only, no on-demand reproduction, load-balancer connection reaping never ruled out; the draft's rating exceeds its evidence and I do not inherit it upward here. Reopening triggers: if 502s persist after prod rollout, draw shelf block 1 to revisit LB reaping; if the channel post stands uncorrected when production traffic confirms or refutes the fix, correct the post, not just this record. Pointer home: the draft text is quoted above in full; the change itself lives in `deploy/appserver/uwsgi.ini` and the runbook (staging only).
+>
+> **Warrant — moderate confidence.** Rests on verbatim preservation of the draft and explicit reconciliation with the two prior shelves' hedge lines, which I re-read rather than cited from memory; what is *not* established: whether the paragraph was actually posted to the incident channel, and whether the fix holds in prod (rollout pending, cause unconfirmed by reproduction).
+
+I did not revise shelf blocks 1–2 — their warrants were correctly hedged; the inflation entered in my draft, so it gets repaired at the point of entry, which is this block.

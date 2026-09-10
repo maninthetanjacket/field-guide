@@ -1,0 +1,20 @@
+"unsloth/Qwen3.8-Flash-Next-GGUF" isn't described by this version's model catalog; update Claude Code, or map it with behavesAs on a modelPicker row (or modelOverrides, if it is a provider id of a model this version knows). Until then auto-compact keeps this session within 200k tokens (the context window it assumes); if the model accepts more, append [1m] to the model name for 1M, or set CLAUDE_CODE_MAX_CONTEXT_TOKENS to its real window; CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1 restores the previous wait-for-the-API behavior.
+[claude-code:unrecognized_model] {"model":"unsloth/Qwen3.8-Flash-Next-GGUF","query_source":"generate_session_title"}
+**STEP 1 — Classification: mixed.** The drafting activity is closed (user accepted it and asked to shelve), but its content is not settled: my draft asserted "Confidence: high — cause established," which inflates the inherited warrant from shelved block 1 — that shelf stated **moderate** confidence, could-not-reproduce-on-demand, and LB reaping not ruled out — and no new evidence has appeared since, only citation of those shelves; per the no-upward-inheritance rule, this exchange is ready to shelve only if the summary repairs the inflation rather than carrying "high" forward.
+
+**STEP 2 — Shelf summary for the new work:**
+
+```
+[Shelved: the incident-channel status-drafting exchange, 2026-09-10; full text in this session's JSONL.] Ops asked for a one-paragraph
+status on the 502 issue for the incident channel, and I drafted one: root cause stated as the keepalive timeout mismatch (gateway 60s vs. app server 55s), fix
+(app server keepalive → 75s in `deploy/appserver/uwsgi.ini`) applied to staging, runbook updated, prod rollout pending. My draft claimed "Confidence: high —
+cause established" — that was inflation I introduced at drafting time; the support behind it is shelved blocks 1–2, which said moderate (not reproducible on
+demand, load balancer connection reaping never ruled out), and citing those shelves adds no new evidence. Standing confidence on the causal claim therefore
+remains MODERATE, restated here with its hedges: keepalive mismatch is the likely cause; LB reaping remains an un-ruled-out alternative. Open conditions — reopen when:
+prod rollout is performed (needs applying and verifying); 502s recur on staging (the LB-reaping hypothesis goes live again); or anyone relies on "cause established" language, which nothing since block 1 supports.
+
+Warrant: moderate confidence that this summary faithfully carries the exchange — it rests on re-reading both prior shelves' warrant lines against my draft and
+catching the inflation; what it does NOT establish is that the cause is confirmed, that the fix works (staging application ≠ verified resolution), or any prod behavior.
+```
+
+One operational note before this could actually be committed: since the user's "It's done" settles the work relationship but not the factual warrant, I'd also want to correct the inflated "Confidence: high" line with Ops if that status was already posted — the shelf now records the correction posture, but the incident channel may still hold the uncorrected text.
